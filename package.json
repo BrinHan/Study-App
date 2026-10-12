@@ -1,0 +1,26 @@
+{
+  "name": "margin",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "sample-pdf": "node scripts/make-sample-pdf.mjs"
+  },
+  "dependencies": {
+    "@fontsource-variable/plus-jakarta-sans": "^5.3.0",
+    "compromise": "^14.18.0",
+    "idb": "^8.0.4",
+    "pdfjs-dist": "^6.4.299",
+    "preact": "^11.0.1",
+    "ts-fsrs": "^5.4.2"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "^2.10.6",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.4",
+    "vite-plugin-pwa": "^2.0.0"
+  }
+}
