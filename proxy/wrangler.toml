@@ -1,0 +1,21 @@
+name = "margin-proxy"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"
+
+[vars]
+ENABLED = "true"
+ALLOWED_ORIGINS = "https://brinhan.github.io"   # local dev origins are set in .dev.vars
+GEMINI_MODEL = "gemini-2.5-flash"   # check AI Studio for the current free-tier Flash model at deploy time
+IP_PER_HOUR = "40"                 # one handwritten import can use ~25 requests (20 pages + clarify + generate)
+IP_PER_DAY = "120"
+GLOBAL_PER_MINUTE = "8"
+GLOBAL_PER_DAY = "800"              # set to ~80% of the model's free-tier requests/day shown in AI Studio
+SESSION_TTL_SEC = "1800"           # long enough for a 20-page scan that waits out the minute limit
+
+[[durable_objects.bindings]]
+name = "LIMITER"
+class_name = "Limiter"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Limiter"]
