@@ -254,14 +254,20 @@ export function Review({ query }: { query: URLSearchParams }) {
                 <SourceQuote card={c} sentenceId={c.extraSourceIds?.[0]} term={termB} kit={kit} label={`“${termB}” in your notes`} />
               </>
             ) : (
-              <SourceQuote card={c} sentenceId={c.sourceSentenceId} term={c.answer} kit={kit} label={firstRight ? 'From your notes' : 'The answer is in this passage'} />
+              <>
+                <SourceQuote card={c} sentenceId={c.sourceSentenceId} term={c.answer} kit={kit} label={firstRight ? 'From your notes' : 'The answer is in this passage'} />
+                {c.explanation && <p>{c.explanation}</p>}
+              </>
             )
           )}
-          {isMcq && finished && picked.filter((p) => p !== c.answer).map((p) => (
-            whyNot.includes(p)
-              ? <SourceQuote key={p} card={c} sentenceId={c.distractorSources?.find((s) => s.term === p)?.sentenceId} term={p} kit={kit} label={`Why not “${p}”? Your notes use it here, in a different context:`} />
+          {isMcq && finished && picked.filter((p) => p !== c.answer).map((p) => {
+            const why = c.distractorExplanations?.[c.distractors?.indexOf(p) ?? -1]
+            return whyNot.includes(p)
+              ? why
+                ? <p key={p}><strong>Why not “{p}”?</strong> {why}</p>
+                : <SourceQuote key={p} card={c} sentenceId={c.distractorSources?.find((s) => s.term === p)?.sentenceId} term={p} kit={kit} label={`Why not “${p}”? Your notes use it here, in a different context:`} />
               : <div key={p} class="actions"><button class="btn" onClick={() => setWhyNot([...whyNot, p])}>Why not “{p}”?</button></div>
-          ))}
+          })}
         </section>
       )}
 
