@@ -1,8 +1,10 @@
 # Margin
 
-A free, offline study app (concept build). Import your own notes as a text-based PDF or pasted text. Margin turns them into flashcards and multiple-choice questions, schedules reviews with spaced repetition (FSRS), and explains every answer by showing the exact sentence from your notes, with its page or paragraph.
+A free study app (concept build). Import your own notes as a PDF, photos of handwritten notes, or pasted text. Margin turns them into flashcards and multiple-choice questions, schedules reviews with spaced repetition (FSRS), and explains every answer by showing the exact sentence from your notes, with its page or paragraph.
 
-No accounts, no server, no API keys. Everything runs in the browser and is stored on the device (IndexedDB). After the first visit it works offline.
+No accounts and no API keys. Questions are written by AI through a small proxy; without it, or offline, Margin uses its built-in generator. The app runs in the browser and your kits are stored on the device (IndexedDB). After the first visit it works offline.
+
+**Privacy.** When AI is used, your notes leave the device: the text is sent to a small proxy (a Cloudflare Worker), which forwards it to Google Gemini. Photos and scanned pages are sent the same way. Without the proxy, or when offline, everything stays on the device. See Privacy below.
 
 ```bash
 npm install
@@ -43,7 +45,47 @@ If a card has no stored source (for example an edited backup), Margin finds the 
 
 **8. Mix-ups and adaptive quizzes.** If you pick the same wrong term B for answer A twice, Margin creates a "compare" card with both source sentences and lists it under *Mix-ups to fix*. Practice quizzes sample 10 MCQ cards, weighted toward topics with low accuracy and cards you've missed.
 
-**AI seam.** `src/gen/generator.ts` exports a `CardGenerator` interface. A local-AI generator (WebLLM or similar) can implement it and be swapped in at the one line in `src/worker.ts`. Storage, review and explanations don't change.
+**Generator seam.** `src/gen/generator.ts` exports a `CardGenerator` interface. The built-in generator and the AI generator both implement it, and `src/worker.ts` picks one. Storage, review and explanations don't change.
+
+## AI questions
+
+When the proxy is configured and the browser is online, Margin asks AI to write the questions. Otherwise it uses the built-in generator described above.
+
+```
+browser  ->  proxy (Cloudflare Worker)  ->  Google Gemini
+```
+
+- **Proxy.** `proxy/` is a Worker with the routes `/session`, `/generate`, `/transcribe` and `/clarify`. It keeps the Gemini key as a secret. It checks the origin, requires a Turnstile-verified session token bound to the IP, and applies per-IP and global rate limits in a Durable Object. Generated questions are cached for a week (on a custom domain only).
+- **Shared code.** `shared/` holds the question schema and validator used by both sides. Nothing the model returns is trusted until it passes the validator. AI text is shown as plain text.
+- **Configuration.** The app reads `VITE_AI_PROXY_URL` and `VITE_TURNSTILE_SITEKEY` at build time. If either is unset, the app behaves as it did before and adds no delay.
+- **Fallback.** Notes are sent in chunks. If a chunk fails, only that chunk falls back to built-in questions. A kill switch (`ENABLED=false`) turns the proxy off for everyone.
+- **Explanations.** AI questions show the source passage from your notes, plus a short explanation and a reason for each wrong choice.
+
+To deploy your own proxy, or to run it locally, see [docs/deploy-proxy.md](docs/deploy-proxy.md).
+
+### Handwriting and scanned PDFs
+
+Photos of notes and scanned PDF pages are read by Gemini in two passes. The picker accepts photos (JPEG, PNG, WebP, and HEIC where the browser can decode it) as well as PDFs.
+
+1. **Transcribe.** Each page is sent as one image and transcribed faithfully. Anything unclear is marked instead of guessed.
+2. **Clarify.** The whole transcript is sent as text, and each mark is resolved using the rest of the document. For example, a lone "E" in a thermodynamics section becomes "E (energy of sublimation)". Low-confidence readings are kept visible as "[?]". If this pass fails, the kit is still made from the first pass.
+
+Details:
+- Photos and scanned pages are sent to Google Gemini. This needs internet.
+- At most 20 AI-read pages per import.
+- Images are downscaled in the browser (1600 px on the longest side, JPEG) before upload.
+- Per-IP limits are 40 requests an hour and 120 a day. When the proxy is briefly busy, the app waits and retries.
+- If a page still can't be read, the import says so ("Read 18 of 20 pages (2 couldn’t be read)") and the transcript marks the page. Import it again to add it.
+- In a mixed PDF, only the pages with little text go to AI.
+- The full transcript is saved on the kit. There is no viewer for it yet.
+
+## Privacy
+
+- **With AI on:** the text of your notes (or the photos and scanned pages) is sent to the proxy and on to Google Gemini. Google's free-tier terms apply to that data. On Gemini's free tier, Google may use submitted content to improve its products. Don't import anything you wouldn't send to a third party.
+- **What the proxy keeps:** it doesn't log notes, request bodies or raw IP addresses. Logs hold error codes and timings only. IPs are stored only as a salted hash, for rate limiting (IPv6 addresses by their /64 prefix).
+- **What stays local:** your kits, cards, reviews and progress live in IndexedDB on your device. They are never uploaded.
+- **With AI off:** if the proxy isn't configured, or you're offline, nothing leaves the device.
+- **Keys:** the Gemini key exists only as a Worker secret. It is never in the app or in git.
 
 ## Performance (measured)
 
@@ -79,7 +121,12 @@ To see storage states without a private window or a full disk, add `?sim=blocked
 
 ## Known limitations
 
-- **Text-based PDFs only.** No OCR, by design: it would mean a large download.
+- **AI questions need internet.** Offline, or without the proxy, you get the built-in questions.
+- **Very large notes are only partly covered by AI.** Notes over about 1,200 sentences get AI questions for the first part and built-in questions for the rest.
+- **Handwriting is capped at 20 pages** per import, and reading it needs internet.
+- **AI can make mistakes.** The source passage is shown with every question so you can check it. Handwriting transcripts can also be wrong.
+- **No transcript viewer yet.** The transcript is saved on the kit, but you can't see or edit it. That is planned for a later UI phase.
+- **No offline OCR.** Scanned PDFs and photos are read by AI only. Offline, a scanned PDF shows the "scanned" error.
 - **English only.** The POS tagging, stopwords and sentence splitting assume English.
 - Card quality depends on the notes. Dense, complete sentences give good cards. Bullet fragments are skipped. Some distractors are weak (for example "carbon sugar" from "five-carbon sugar"), and the generator sometimes blanks a word that's part of a longer phrase.
 - PDF layout: multi-column pages, tables and footnotes can be joined in the wrong order, because pdf.js returns text in drawing order.
@@ -97,11 +144,16 @@ src/
   ui.tsx, styles.css     shared components and the flat dark theme (CSS variables)
   screens/               Today, Library, Kit, Review, Done, Progress, Settings
   lib/db.ts              IndexedDB stores (kits, sentences, cards, reviews, confusions, files, meta), backup
+  lib/config.ts          build-time AI settings (VITE_AI_PROXY_URL, VITE_TURNSTILE_SITEKEY)
   lib/importer.ts        main-thread import: size/type checks, lazy pdf.js, worker, cancel, errors
   lib/study.ts           FSRS, queues, exam extras, forecast, stats, adaptive quiz, source lookup
+  gen/ai/                AI card generator with per-chunk fallback
   gen/generator.ts       TF-IDF, TextRank, cloze/MCQ, summary (the CardGenerator seam)
   gen/text.ts            tokenizer, sentence splitter, cosine similarity
   worker.ts              runs the generator, writes the kit in one transaction
+shared/                  AI question schema, validator and scan helpers (used by app and proxy)
+proxy/                   Cloudflare Worker: Gemini proxy, rate limiter, Turnstile (see docs/deploy-proxy.md)
+docs/deploy-proxy.md     how to deploy and run the proxy
 samples/                 cell-biology.md / .pdf, plus the 50-page timing PDF
 scripts/                 dependency-free sample PDF writer
 ```

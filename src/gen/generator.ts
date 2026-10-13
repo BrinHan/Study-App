@@ -33,7 +33,7 @@ export interface GenOutput {
 
 export interface CardGenerator {
   name: string
-  generate(kitId: string, doc: SourceDoc, progress: (p: Progress) => void): GenOutput
+  generate(kitId: string, doc: SourceDoc, progress: (p: Progress) => void): Promise<GenOutput>
 }
 
 export class GenError extends Error {
@@ -223,7 +223,7 @@ const display = (t: Term) => [...t.surface.entries()].sort((a, b) => b[1] - a[1]
 
 export const classicGenerator: CardGenerator = {
   name: 'classic (TF-IDF + TextRank)',
-  generate(kitId, doc, progress) {
+  async generate(kitId, doc, progress) {
     const paragraphs = toParagraphs(doc)
     progress({ step: 'read', text: doc.kind === 'pdf' ? `Read ${doc.pages.length} pages` : `Read ${paragraphs.length} paragraphs` })
 

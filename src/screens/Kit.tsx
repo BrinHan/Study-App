@@ -182,7 +182,7 @@ export function KitScreen({ id, query }: { id: string; query: URLSearchParams })
           <>
             {kit.sourceType === 'pdf' && (file
               ? <div class="actions"><button class="btn" onClick={openPdf}>Open original PDF ({mb(file.size)})</button></div>
-              : <p class="muted small">The original PDF was removed to save space. Cards and the sentences below are kept.</p>)}
+              : <p class="muted small">{kit.transcript && !/\.pdf$/i.test(kit.fileName ?? '') ? 'Made from photos; the original images aren’t stored.' : 'The original PDF was removed to save space. Cards and the sentences below are kept.'}</p>)}
             <SourceText sentences={sentences} kit={kit} at={query.get('at') ?? undefined} />
           </>
         )}

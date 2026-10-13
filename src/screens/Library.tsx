@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { useAsync } from '../lib/hooks'
 import { daysUntil, dueByKit, loadStudyData, parseDayKey } from '../lib/study'
-import { cancelImport, countWords, dismissImport, MIN_PASTE_WORDS, getImport, startImport, subscribeImport, type ImportState } from '../lib/importer'
+import { cancelImport, classifyPicked, countWords, dismissImport, MIN_PASTE_WORDS, getImport, startImport, subscribeImport, type ImportInput, type ImportState } from '../lib/importer'
 import { Badge, Icon, Loading, Notice, PageHeader, fmtDate, plural } from '../ui'
 
 export function useImportState() {
@@ -35,14 +35,14 @@ export function Library({ query }: { query: URLSearchParams }) {
   const [filter, setFilter] = useState<Filter>('all')
   const fileInput = useRef<HTMLInputElement>(null)
   const pdfButton = useRef<HTMLButtonElement>(null)
-  const lastInput = useRef<{ file: File } | { text: string; title: string } | null>(null)
+  const lastInput = useRef<ImportInput | null>(null)
 
   useEffect(() => {
     if (query.get('import') === 'paste') setPasting(true)
     if (query.get('import') === 'pdf') pdfButton.current?.focus()
   }, [query.toString()])
 
-  const run = (input: { file: File } | { text: string; title: string }) => {
+  const run = (input: ImportInput) => {
     lastInput.current = input
     startImport(input)
   }
@@ -95,10 +95,18 @@ export function Library({ query }: { query: URLSearchParams }) {
         <div class="actions">
           <button ref={pdfButton} class="btn primary" onClick={choosePdf} disabled={running}><Icon name="file" /> Choose a PDF</button>
           <button class="btn" onClick={() => setPasting(!pasting)} disabled={running} aria-expanded={pasting}><Icon name="paste" /> Paste text</button>
-          <input ref={fileInput} type="file" accept="application/pdf,.pdf" class="visually-hidden" tabIndex={-1} aria-hidden="true"
-            onChange={(e) => { const f = (e.target as HTMLInputElement).files?.[0]; (e.target as HTMLInputElement).value = ''; if (f) { setPasting(false); run({ file: f }) } }} />
+          <input ref={fileInput} type="file" accept="application/pdf,.pdf,image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif" multiple class="visually-hidden" tabIndex={-1} aria-hidden="true"
+            onChange={(e) => {
+              const el = e.target as HTMLInputElement
+              const files = [...(el.files ?? [])]
+              el.value = ''
+              if (!files.length) return
+              setPasting(false)
+              const pick = classifyPicked(files)
+              run(pick.kind === 'pdf' ? { file: files[pick.index] } : pick.kind === 'photos' ? { photos: pick.order.map((i) => files[i]) } : { invalid: true })
+            }} />
         </div>
-        <p class="muted small">PDFs up to 10 MB with selectable text. Scanned pages (pictures of text) can’t be read; paste the text instead.</p>
+        <p class="muted small">PDFs up to 10 MB, or photos of handwritten notes (up to 20 pages). Scanned and handwritten pages are read with AI.</p>
 
         {pasting && !running && (
           <form class="stack" onSubmit={(e) => { e.preventDefault(); run({ text, title }); if (countWords(text) >= MIN_PASTE_WORDS) { setPasting(false); setText(''); setTitle('') } }}>
