@@ -23,6 +23,7 @@ export interface Kit {
   quizReason?: string // why the quiz is off, shown on the kit page
   summary: SummaryPoint[]
   sentenceCount: number
+  transcript?: string // AI-read text of photos and scanned pages, kept for a later viewer and editor
 }
 
 export interface Sentence {
@@ -50,6 +51,8 @@ export interface StudyCard {
   answer: string
   distractors?: string[]
   distractorSources?: DistractorSource[]
+  explanation?: string // why the answer is right
+  distractorExplanations?: string[] // aligned index-for-index with distractors
   sourceSentenceId?: string
   extraSourceIds?: string[] // compare cards cite both terms
   hint: string
