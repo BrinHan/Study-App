@@ -92,10 +92,23 @@ export async function sentencesForKit(kitId: string) {
 }
 export const allReviews = async () => (await getDB()).getAll('reviews')
 export const addReview = async (r: Review) => (await getDB()).put('reviews', r)
+export const deleteReview = async (id: string) => (await getDB()).delete('reviews', id)
 export const allConfusions = async () => (await getDB()).getAll('confusions')
 export const getConfusion = async (id: string) => (await getDB()).get('confusions', id)
 export const putConfusion = async (c: Confusion) => (await getDB()).put('confusions', c)
 export const getFile = async (kitId: string) => (await getDB()).get('files', kitId)
+
+export const sessionId = (kitId: string, mode: StudySession['mode']) => `${kitId}|${mode}`
+export const getSession = async (id: string) => (await getDB()).get('sessions', id)
+export const putSession = async (s: StudySession) => (await getDB()).put('sessions', s)
+export const deleteSession = async (id: string) => (await getDB()).delete('sessions', id)
+export const listSessions = async () => (await getDB()).getAll('sessions')
+
+/** Bring a card stored by an older version up to date: FSRS state becomes mastery progress. */
+export function migrateCard(raw: any): StudyCard {
+  const { fsrs, introducedOn: _introduced, ...card } = raw
+  return { ...card, progress: card.progress ?? (fsrs ? progressFromFsrs(fsrs) : newProgress()) }
+}
 
 export async function listFiles(): Promise<Omit<StoredFile, 'blob'>[]> {
   const db = await getDB()
