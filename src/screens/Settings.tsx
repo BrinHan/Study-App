@@ -7,6 +7,10 @@ import { notifyDataChanged, useAsync, useOnline } from '../lib/hooks'
 import { applyUpdate, checkForUpdates, install, pwa, subscribePwa } from '../pwa'
 import { Notice, PageHeader, fmtDate, mb, plural } from '../ui'
 import { dayKey } from '../lib/study'
+import type { LearnAnswer, Settings as AppSettings } from '../lib/types'
+
+export const ANSWER_LABEL: Record<LearnAnswer, string> = { mixed: 'Multiple choice, then typed', mcq: 'Multiple choice only', written: 'Typed only' }
+export const ROUND_SIZES = [5, 7, 10]
 
 export function StorageHelp() {
   return (
@@ -43,7 +47,6 @@ export function Settings({ storageBlocked }: { storageBlocked: boolean }) {
   const online = useOnline()
   const p = usePwa()
   const { data, error } = useAsync(() => (storageBlocked ? Promise.resolve(null) : loadSettingsData()), [storageBlocked])
-  const [newPerDay, setNewPerDay] = useState<string | null>(null)
   const [msg, setMsg] = useState<Record<string, string>>({})
   const [confirm, setConfirm] = useState<'pdfs' | 'all' | null>(null)
   const [pendingRestore, setPendingRestore] = useState<Backup | null>(null)
@@ -68,8 +71,12 @@ export function Settings({ storageBlocked }: { storageBlocked: boolean }) {
   if (!data) return null
 
   const pdfBytes = data.files.reduce((s, f) => s + f.size, 0)
-  const value = newPerDay ?? String(data.settings.newPerDay)
-  const valid = /^\d+$/.test(value) && +value >= 1 && +value <= 200
+  const saveLearn = async (patch: Partial<AppSettings>) => {
+    const next = { ...data.settings, ...patch }
+    await saveSettings(next)
+    notifyDataChanged()
+    say('learn', `Saved. New Learn sessions use ${ANSWER_LABEL[next.learnAnswer].toLowerCase()} in rounds of ${next.roundSize}.`)
+  }
 
   const download = async () => {
     const backup = await exportBackup()
@@ -90,20 +97,31 @@ export function Settings({ storageBlocked }: { storageBlocked: boolean }) {
       <PageHeader title="Settings" />
 
       <section class="card stack">
-        <h2>Daily new cards</h2>
-        <form class="inline" onSubmit={async (e) => { e.preventDefault(); if (!valid) return; await saveSettings({ ...data.settings, newPerDay: +value }); notifyDataChanged(); say('new', `Saved. Up to ${value} new cards a day.`) }}>
-          <label class="field"><span>New cards per day</span><input type="number" min={1} max={200} value={value} onInput={(e) => setNewPerDay((e.target as HTMLInputElement).value)} /></label>
-          <button class="btn primary" type="submit" disabled={!valid}>Save</button>
-        </form>
-        {!valid && <p class="small danger-text">Enter a whole number from 1 to 200.</p>}
-        <p class="muted small">{msg.new ?? 'Each new card adds about 3 reviews over the following week. 20 a day is roughly 10 minutes of reviewing.'}</p>
+        <h2>Learn</h2>
+        <div class="stack-sm">
+          <span class="small muted strong">Answer with</span>
+          <div class="segmented" role="group" aria-label="Answer with">
+            {(Object.keys(ANSWER_LABEL) as LearnAnswer[]).map((a) => (
+              <button key={a} class={data.settings.learnAnswer === a ? 'on' : ''} aria-pressed={data.settings.learnAnswer === a} onClick={() => saveLearn({ learnAnswer: a })}>{ANSWER_LABEL[a]}</button>
+            ))}
+          </div>
+        </div>
+        <div class="stack-sm">
+          <span class="small muted strong">Cards per round</span>
+          <div class="segmented" role="group" aria-label="Cards per round">
+            {ROUND_SIZES.map((n) => (
+              <button key={n} class={data.settings.roundSize === n ? 'on' : ''} aria-pressed={data.settings.roundSize === n} onClick={() => saveLearn({ roundSize: n })}>{n}</button>
+            ))}
+          </div>
+        </div>
+        <p class="muted small" role="status">{msg.learn ?? 'Multiple choice, then typed asks each card both ways before it counts as learned. Sessions already in progress keep their settings.'}</p>
       </section>
 
       <section class="card stack">
         <h2>Storage</h2>
         <p>
           {data.estimate?.usage != null ? <>Margin is using <strong>{mb(data.estimate.usage)}</strong>{data.estimate.quota ? <> of about {mb(data.estimate.quota)} your browser allows</> : null}.</> : 'Your browser doesn’t report storage use.'}
-          {' '}{plural(data.kits.length, 'kit')}, {plural(data.cards, 'card')}, {plural(data.reviews, 'review')}.
+          {' '}{plural(data.kits.length, 'kit')}, {plural(data.cards, 'card')}, {plural(data.reviews, 'answer')}.
         </p>
         <p class="muted small">{data.files.length ? `${plural(data.files.length, 'original PDF')} stored (${mb(pdfBytes)}), used for “Open original PDF” on kit pages.` : 'No original PDFs are stored.'}</p>
         {confirm === 'pdfs' ? (
@@ -119,7 +137,7 @@ export function Settings({ storageBlocked }: { storageBlocked: boolean }) {
 
       <section class="card stack">
         <h2>Backup</h2>
-        <p class="muted small">A backup is one .json file with your kits, cards, source sentences and review history. Original PDFs aren’t included. Keep it somewhere safe; Margin has no cloud copy.</p>
+        <p class="muted small">A backup is one .json file with your kits, cards, source sentences and study history. Original PDFs aren’t included. Keep it somewhere safe; Margin has no cloud copy.</p>
         <div class="actions">
           <button class="btn primary" onClick={download} disabled={!data.kits.length}>Download backup (.json)</button>
           <button class="btn" onClick={() => restoreInput.current?.click()}>Restore from backup…</button>
@@ -159,7 +177,7 @@ export function Settings({ storageBlocked }: { storageBlocked: boolean }) {
         {confirm === 'all' ? (
           <Notice tone="danger" title="Delete everything on this device?"
             actions={<><button class="btn danger-solid" onClick={async () => { await deleteEverything(); setConfirm(null); notifyDataChanged(); say('all', 'All data deleted.') }}>Delete {plural(data.kits.length, 'kit')} and {plural(data.cards, 'card')}</button><button class="btn" onClick={() => setConfirm(null)}>Keep my data</button><button class="btn" onClick={download}>Download backup first</button></>}>
-            This removes every kit, card, review and stored PDF. It can’t be undone without a backup.
+            This removes every kit, card, answer and stored PDF. It can’t be undone without a backup.
           </Notice>
         ) : (
           <div class="actions"><button class="btn danger" onClick={() => setConfirm('all')} disabled={!data.kits.length && !data.reviews}>Delete all data…</button></div>
