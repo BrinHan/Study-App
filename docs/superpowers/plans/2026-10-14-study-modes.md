@@ -34,3 +34,115 @@
 
 ---
 
+### Task 1: Answer checking and seeded random helpers
+
+**Files:**
+- Create: `src/study/random.ts`, `src/study/answer.ts`, `src/study/answer.test.ts`
+
+**Interfaces:**
+- Produces:
+  - `shuffled<T>(items: T[], seed: string): T[]` (move the FNV-based version from `src/screens/Review.tsx` unchanged).
+  - `normalize(s: string): string`.
+  - `levenshtein(a: string, b: string): number`.
+  - `checkTyped(input: string, answer: string): 'exact' | 'close' | 'wrong'`.
+
+- [ ] **Step 1: Failing tests** (`answer.test.ts`):
+  - `normalize('  The Mitochondria. ')` returns `'mitochondria'`.
+  - `normalize('an ATP-synthase')` returns `'atp synthase'`.
+  - `checkTyped('mitochondria', 'Mitochondria')` returns `'exact'`.
+  - `checkTyped('plasma membrain', 'plasma membrane')` returns `'close'` (distance 2, length 15).
+  - `checkTyped('ATQ', 'ATP')` returns `'close'` (distance 1, length 3).
+  - `checkTyped('ARQ', 'ATP')` returns `'wrong'` (distance 2, length 3).
+  - `checkTyped('', 'ATP')` returns `'wrong'`.
+  - `shuffled([1,2,3,4], 's')` is deterministic: it equals itself on a second call and has the same members.
+- [ ] **Step 2:** Run `npx vitest run src/study/answer.test.ts`. Expect FAIL (module not found).
+- [ ] **Step 3: Implement.**
+  - `normalize`: lowercase, replace `[^\p{L}\p{N}]+` with a space, trim, strip a leading `the |a |an `, collapse spaces.
+  - Empty input counts as `'wrong'`.
+  - The tolerance uses the normalised answer's length.
+- [ ] **Step 4:** Run the tests. Expect PASS.
+- [ ] **Step 5:** Commit: `Add typed-answer checking and seeded shuffle`.
+
+### Task 2: Mastery model, types and FSRS migration
+
+**Files:**
+- Create: `src/study/mastery.ts`, `src/study/mastery.test.ts`
+- Modify: `src/lib/types.ts`
+
+**Interfaces:**
+- Produces in `types.ts`:
+  - `MasteryState = 'new' | 'learning' | 'mastered'`.
+  - `CardProgress { state; streak: number; seen: number; lastSeen?: number }`.
+  - `StudyCard` loses `fsrs` and `introducedOn`, and gains `progress: CardProgress` and `starred?: boolean`.
+  - `Review.rating` becomes optional (`1|2|3|4`). `Review` adds `mode?: StudyMode` and `format?: AnswerFormat`.
+  - `StudyMode = 'learn' | 'flashcards' | 'test'`.
+  - `AnswerFormat = 'mcq' | 'written' | 'tf' | 'match' | 'flip'`.
+  - `Settings { learnAnswer: LearnAnswer; roundSize: number }`, with `LearnAnswer = 'mixed' | 'mcq' | 'written'`. `DEFAULT_SETTINGS = { learnAnswer: 'mixed', roundSize: 7 }`.
+  - `StudySession { id: string; kitId: string; mode: 'learn' | 'flashcards'; state: unknown; updatedAt: number }`.
+- Produces in `mastery.ts`:
+  - `newProgress(): CardProgress`.
+  - `applyAnswer(p: CardProgress, correct: boolean, now = Date.now()): CardProgress`.
+  - `progressFromFsrs(f: { state: number; scheduled_days: number; reps: number; last_review?: string | Date }): CardProgress`.
+  - `STATUS_LABEL: Record<MasteryState, string>`.
+  - `kitMastery(cards: StudyCard[]): { new: number; learning: number; mastered: number; total: number }`.
+
+- [ ] **Step 1: Failing tests.**
+  - `applyAnswer(newProgress(), true)` gives `{state:'learning', streak:1, seen:1}`. Applying `true` again gives `mastered`, streak 2.
+  - A wrong answer on a mastered card gives `learning`, streak 0.
+  - `progressFromFsrs({state:0, scheduled_days:0, reps:0})` gives `new`.
+  - `{state:2, scheduled_days:21, reps:5}` gives `mastered`, streak 2, seen 5.
+  - `{state:2, scheduled_days:20, reps:5}` gives `learning`.
+  - `{state:3, …}` gives `learning`.
+  - `kitMastery` counts correctly.
+- [ ] **Step 2:** Run. Expect FAIL.
+- [ ] **Step 3:** Implement `mastery.ts` and update `types.ts`. `tsc` will now fail across the app; Task 3 fixes the data layer and Task 9 fixes the screens. Keep `npx vitest run src/study` green.
+- [ ] **Step 4:** Run `npx vitest run src/study`. Expect PASS.
+- [ ] **Step 5:** Commit: `Add card mastery model replacing FSRS state`.
+
+### Task 3: Data layer (DB v2, sessions, backup v2, generators)
+
+**Files:**
+- Modify: `src/lib/db.ts`, `src/gen/generator.ts:9,297`, `src/gen/ai/toCards.ts:1,11`, `package.json` (remove `ts-fsrs`)
+- Create: `src/lib/backup.test.ts`
+
+**Interfaces:**
+- Consumes: Task 2 types and `progressFromFsrs`, `newProgress`.
+- Produces in `db.ts`:
+  - `getSession(id)`, `putSession(s: StudySession)`, `deleteSession(id)`, `listSessions(): Promise<StudySession[]>`.
+  - `sessionId(kitId: string, mode: 'learn' | 'flashcards'): string`, which returns `` `${kitId}|${mode}` ``.
+  - `migrateCard(raw: any): StudyCard`, exported for tests. It adds `progress` from `raw.fsrs` when `progress` is missing, then deletes `fsrs` and `introducedOn`.
+  - `Backup.version: 1 | 2`, with export writing 2. `parseBackup` maps cards through `migrateCard` and ignores old `settings.newPerDay` by merging over `DEFAULT_SETTINGS`.
+  - `deleteKit` also deletes that kit's two sessions. `deleteEverything` and `restoreBackup` also clear `sessions`.
+- DB upgrade: `openDB('margin', 2, { upgrade(db, oldVersion, _new, tx) })`.
+  - When `oldVersion < 1`, create the v1 stores.
+  - When `oldVersion < 2`, create `sessions` (keyPath `id`, index `kitId`) and iterate the `cards` store cursor through `tx`, writing `migrateCard(value)`.
+- Generators use `progress: newProgress()` in place of `fsrs: createEmptyCard(now)`.
+
+- [ ] **Step 1: Failing tests** (`backup.test.ts`):
+  - `parseBackup` of a v1 JSON whose card has `fsrs:{state:2, scheduled_days:30, reps:4, due:'…'}` produces a card with `progress.state === 'mastered'` and no `fsrs` key.
+  - A v2 backup card with `progress` passes through unchanged.
+  - Settings `{newPerDay:20}` become `{learnAnswer:'mixed', roundSize:7}`.
+- [ ] **Step 2:** Run. Expect FAIL.
+- [ ] **Step 3:** Implement. Run `npm uninstall ts-fsrs`.
+- [ ] **Step 4:** Run `npx vitest run`. Expect all PASS, including the existing generator tests.
+- [ ] **Step 5:** Commit: `Move storage to mastery progress and add sessions store`.
+
+### Task 4: Multiple-choice options
+
+**Files:**
+- Create: `src/study/options.ts`, `src/study/options.test.ts`
+
+**Interfaces:**
+- Produces: `choicesFor(card: StudyCard, pool: StudyCard[], seed: string): string[] | null`.
+  - Returns 4 shuffled, distinct strings (compared case-insensitively) that include `card.answer`, or null.
+  - Prefers `card.distractors`. Fills up from `pool` answers (excluding compare cards and the answer itself), sorted by `|len - answer.len|`.
+- Also produces: `distinctAnswers(cards: StudyCard[]): number` (case-insensitive distinct count over cloze and mcq cards).
+
+- [ ] **Step 1: Failing tests:**
+  - An mcq card with 3 distractors returns those plus the answer.
+  - A cloze card in a pool of 5 distinct answers returns 4 choices including the answer, with no duplicates.
+  - Returns null when the pool has fewer than 4 distinct answers.
+  - Duplicate answers ("ATP" and "atp") are never both present.
+- [ ] **Step 2–4:** Run (FAIL), implement, run (PASS).
+- [ ] **Step 5:** Commit: `Add multiple-choice option builder`.
+
