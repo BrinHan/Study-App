@@ -115,18 +115,43 @@ export function KitScreen({ id, query }: { id: string; query: URLSearchParams })
       ) : (
         <PageHeader
           title={kit.title}
-          sub={<>{kit.sourceType === 'pdf' ? `${kit.fileName}${kit.pageCount ? ` · ${plural(kit.pageCount, 'page')}` : ''}` : 'Pasted notes'} · {plural(cards.length, 'card')} · added {fmtDate(kit.createdAt)} <button class="link" onClick={() => { setName(kit.title); setRenaming(true) }}>Rename</button></>}
-          actions={<>
-            {due > 0 ? <a class="btn primary" href={`#/review?kit=${kit.id}`}>Review {plural(due, 'due card')}</a> : <button class="btn" disabled>No cards due</button>}
-            {kit.quizEnabled && mcqCount > 0 ? <a class="btn" href={`#/review?mode=quiz&kit=${kit.id}`}>Practice quiz</a> : <button class="btn" disabled title="See the note below">Practice quiz</button>}
+          sub={<>
+            {kit.sourceType === 'pdf' ? `${kit.fileName}${kit.pageCount ? ` · ${plural(kit.pageCount, 'page')}` : ''}` : 'Pasted notes'} · {plural(cards.length, 'card')} · added {fmtDate(kit.createdAt)}
+            {examLeft >= 0 && <> · <span class="warning-text">Exam {fmtDate(parseDayKey(kit.examDate!))} ({examLeft === 0 ? 'today' : `in ${plural(examLeft, 'day')}`})</span></>}
+            {' '}<button class="link" onClick={() => { setName(kit.title); setRenaming(true) }}>Rename</button>
           </>}
         />
       )}
       {saved && <p class="muted small" role="status">{saved}</p>}
 
+      <nav class="mode-tiles" aria-label="Study modes">
+        {MODES.map((m) => disabled[m.id] ? (
+          <span key={m.id} class="mode-tile disabled" aria-disabled="true">
+            <span class="mode-icon"><Icon name={m.icon} /></span>
+            <span class="mode-text"><strong>{m.label}</strong><span class="small muted">{disabled[m.id]}</span></span>
+          </span>
+        ) : (
+          <a key={m.id} class="mode-tile" href={`#/${m.id}/${kit.id}`}>
+            <span class="mode-icon"><Icon name={m.icon} /></span>
+            <span class="mode-text"><strong>{m.label}</strong><span class="small muted">{m.blurb}</span></span>
+          </a>
+        ))}
+      </nav>
+
+      {nudge !== null && !disabled.test && (
+        <Notice tone="warning" title={nudge === 0 ? 'Your exam is today' : `Your exam is in ${plural(nudge, 'day')}`} actions={<a class="btn primary" href={`#/test/${kit.id}`}>Take a practice test</a>}>
+          A practice test shows which topics need another round of Learn.
+        </Notice>
+      )}
+
+      <section class="card stack-sm" aria-label="Your progress">
+        <div class="row-line"><strong>Your progress</strong><span class="small muted">{masteryLine(counts)}</span></div>
+        <MasteryBar counts={counts} large />
+      </section>
+
       {!kit.quizEnabled && (
-        <Notice tone="warning" title="Flashcards only, no quiz" actions={<a class="btn" href="#/library?import=paste">Paste more notes as a new kit</a>}>
-          {kit.quizReason ?? 'There wasn’t enough text to make quiz questions.'}
+        <Notice tone="warning" title="Short notes, simpler questions" actions={<a class="btn" href="#/library?import=paste">Paste more notes as a new kit</a>}>
+          {kit.quizReason ?? 'There wasn’t enough text to write multiple-choice questions.'} Multiple choice uses the kit’s other answers as options.
         </Notice>
       )}
 
