@@ -67,3 +67,49 @@ In every case `seen = reps`, `lastSeen = last_review`.
 
 Backups export `version: 2`. `parseBackup` accepts version 1 and converts its cards the same way. The `ts-fsrs` dependency is removed.
 
+## Study engine: `src/study/` (pure, unit-tested)
+
+- `random.ts`: seeded `shuffled()` (moved out of `Review.tsx`) and `pickN()`.
+- `answer.ts`: `normalize()` (case, punctuation, leading articles, whitespace) and `checkTyped(input, answer)`, which returns `'exact' | 'close' | 'wrong'`.
+  - `close` means a Levenshtein distance ≤ 1 for answers of 5 characters or fewer, and ≤ 2 for longer ones.
+  - Both `exact` and `close` count as correct, and the UI shows "small typo" for `close`.
+- `mastery.ts`: `newProgress()`, `progressFromFsrs()`, `applyAnswer()`, `statusLabel()`, `kitMastery(cards)` returning `{ new, learning, mastered }`.
+- `options.ts`: `choicesFor(card, pool, seed)`.
+  - Uses the card's own distractors when it has 3.
+  - Otherwise fills up with other cards' answers from the same kit: distinct, not equal to the answer, preferring similar length.
+  - Returns null when there aren't enough unique answers for 4 choices; that card is then written-only.
+- `learn.ts`: the Learn state machine.
+  - Eligible cards: `cloze` and `mcq` (not `compare`).
+  - Each card has a stage (`mcq` → `written` → `done`), depending on the answer option:
+    - `mixed`: multiple choice first (skipped when no choices exist), then written.
+    - `mcq`: done after one correct multiple-choice answer.
+    - `written`: done after one correct typed answer.
+  - A round is up to `roundSize` cards that aren't done yet, with cards already started first. A wrong answer keeps the card at its stage for a later round.
+  - After each round the session shows a checkpoint, and it is finished when every card is done.
+  - API: `startLearn(cards, opts, seed)`, `currentItem(s)`, `answerItem(s, correct)`, `nextRound(s)`, `learnStats(s)`.
+- `flashcards.ts`:
+  - State: order, index, `sort` on/off, `know` and `learning` piles, undo history, front side (`prompt` or `answer`).
+  - API: `startFlashcards()`, `move()`, `sortCard()`, `undo()`, `restartWith('learning' | 'all')`, `shuffleDeck()`.
+- `test.ts`:
+  - `buildTest(cards, opts, seed)` builds questions grouped by type, in the order True/False → Multiple choice → Matching → Written.
+  - The question count is split evenly across the chosen types. A Matching group has 4–5 pairs with distinct answers, and each pair counts as one question.
+  - A True/False statement fills the blank with the answer (true) or a distractor (false), with about half of each.
+  - Cards with too few choices for multiple choice fall back to Written.
+  - `gradeTest(questions, answers)` returns a result per question and the score.
+  - Overrides ("I was right") re-score that question.
+  - `compare` cards are excluded.
+
+## Screens and routes
+
+| Route | Screen |
+|---|---|
+| `#/home` (default; `#/today` redirects) | Home |
+| `#/library?q=…&import=…` | Library (search filter from the top bar) |
+| `#/kit/<id>?tab=cards\|summary\|source` | Kit page, Cards tab by default |
+| `#/learn/<kitId>?cards=a,b` | Learn (optional subset, for "learn the ones you missed") |
+| `#/flashcards/<kitId>?cards=a` | Flashcards (subset used by mix-ups "Compare them") |
+| `#/test/<kitId>` | Test |
+| `#/progress`, `#/settings` | Unchanged routes |
+
+`#/review` and `#/done` are removed; old links show the existing "page doesn't exist" notice, which points to Home.
+
