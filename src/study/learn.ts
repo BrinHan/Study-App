@@ -38,3 +38,17 @@ function pickRound(s: LearnState, missed: string[]): string[] {
     .map((x) => x.id)
 }
 
+export function startLearn(kitId: string, cards: StudyCard[], pool: StudyCard[], options: LearnOptions, seed: string): LearnState | null {
+  const eligible = eligibleForLearn(cards, options.starredOnly)
+  if (!eligible.length) return null
+  const initial: Record<string, LearnStage> = {}
+  for (const c of eligible) {
+    initial[c.id] = options.answer === 'written' || !choicesFor(c, pool, seed) ? 'written' : 'mcq'
+  }
+  const s: LearnState = {
+    kitId, seed, options, order: shuffled(eligible.map((c) => c.id), seed), initial, stage: { ...initial },
+    round: 1, roundIds: [], pos: 0, roundResults: [],
+  }
+  return { ...s, roundIds: pickRound(s, []) }
+}
+
