@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { useAsync } from '../lib/hooks'
-import { daysUntil, dueByKit, loadStudyData, parseDayKey } from '../lib/study'
+import { daysUntil, loadStudyData, parseDayKey } from '../lib/study'
+import { kitMastery } from '../study/mastery'
 import { cancelImport, classifyPicked, countWords, dismissImport, MIN_PASTE_WORDS, getImport, startImport, subscribeImport, type ImportInput, type ImportState } from '../lib/importer'
 import { Badge, Icon, Loading, Notice, PageHeader, fmtDate, plural } from '../ui'
 
@@ -24,7 +25,7 @@ export function ImportSteps({ s }: { s: ImportState }) {
   )
 }
 
-type Filter = 'all' | 'due' | 'exam'
+type Filter = 'all' | 'exam'
 
 export function Library({ query }: { query: URLSearchParams }) {
   const imp = useImportState()
@@ -50,12 +51,11 @@ export function Library({ query }: { query: URLSearchParams }) {
   const pasteInstead = () => { dismissImport(); setPasting(true) }
 
   const running = imp?.status === 'running'
-  const kits = d?.kits ?? []
-  const dueCounts = d ? dueByKit(d) : new Map<string, number>()
-  const dueOf = (id: string) => dueCounts.get(id) ?? 0
+  const search = (query.get('q') ?? '').trim().toLowerCase()
+  const kits = (d?.kits ?? []).filter((k) => !search || k.title.toLowerCase().includes(search))
   const examSoon = (k: (typeof kits)[number]) => !!k.examDate && daysUntil(k.examDate) >= 0 && daysUntil(k.examDate) <= 14
-  const shown = kits.filter((k) => filter === 'all' || (filter === 'due' ? dueOf(k.id) > 0 : examSoon(k)))
-  const counts = { all: kits.length, due: kits.filter((k) => dueOf(k.id) > 0).length, exam: kits.filter(examSoon).length }
+  const shown = kits.filter((k) => filter === 'all' || examSoon(k))
+  const counts = { all: kits.length, exam: kits.filter(examSoon).length }
 
   const errorActions = (code: string) => {
     switch (code) {
@@ -135,8 +135,8 @@ export function Library({ query }: { query: URLSearchParams }) {
         )}
         {imp?.status === 'done' && imp.result && (
           <Notice tone="success" title={`Made ${plural(imp.result.cards, 'card')} from “${imp.title}”`}
-            actions={<><a class="btn primary" href={`#/review?kit=${imp.kitId}`} onClick={dismissImport}>Start review</a><a class="btn" href={`#/kit/${imp.kitId}`} onClick={dismissImport}>Open kit</a><button class="btn" onClick={dismissImport}>Dismiss</button></>}>
-            Took {(imp.result.ms / 1000).toFixed(1)} s.{!imp.result.quizEnabled && ' This kit has flashcards only; open it to see why.'}
+            actions={<><a class="btn primary" href={`#/learn/${imp.kitId}`} onClick={dismissImport}>Start learning</a><a class="btn" href={`#/kit/${imp.kitId}`} onClick={dismissImport}>Open kit</a><button class="btn" onClick={dismissImport}>Dismiss</button></>}>
+            Took {(imp.result.ms / 1000).toFixed(1)} s.{!imp.result.quizEnabled && ' The notes were short, so questions are simpler; open the kit to see why.'}
           </Notice>
         )}
         {imp?.status === 'error' && imp.error && (
@@ -149,12 +149,12 @@ export function Library({ query }: { query: URLSearchParams }) {
 
       <section class="stack" aria-labelledby="kits-h">
         <div class="section-head">
-          <h2 id="kits-h">Kits</h2>
+          <h2 id="kits-h">{search ? <>Kits matching “{query.get('q')}”</> : 'Kits'}</h2>
           {kits.length > 0 && (
             <div class="segmented" role="group" aria-label="Filter kits">
-              {(['all', 'due', 'exam'] as Filter[]).map((f) => (
+              {(['all', 'exam'] as Filter[]).map((f) => (
                 <button key={f} class={filter === f ? 'on' : ''} aria-pressed={filter === f} onClick={() => setFilter(f)}>
-                  {{ all: 'All', due: 'Due today', exam: 'Exam soon' }[f]} <span class="muted">{counts[f]}</span>
+                  {{ all: 'All', exam: 'Exam soon' }[f]} <span class="muted">{counts[f]}</span>
                 </button>
               ))}
             </div>
@@ -162,7 +162,13 @@ export function Library({ query }: { query: URLSearchParams }) {
         </div>
         {loading && <Loading label="Loading kits…" />}
         {error && <Notice tone="danger" title="Kits couldn’t be loaded">{String(error)}</Notice>}
-        {d && kits.length === 0 && (
+        {d && search && kits.length === 0 && d.kits.length > 0 && (
+          <div class="card empty">
+            <p>No kit names match “{query.get('q')}”.</p>
+            <a class="btn" href="#/library">Show all kits</a>
+          </div>
+        )}
+        {d && d.kits.length === 0 && (
           <div class="card empty">
             <p><strong>No kits yet.</strong> Choose a PDF or paste notes above; your first kit appears here.</p>
             <p class="muted small">Try the sample in the project’s <code>samples/</code> folder if you don’t have notes handy.</p>
@@ -170,14 +176,13 @@ export function Library({ query }: { query: URLSearchParams }) {
         )}
         {d && kits.length > 0 && shown.length === 0 && (
           <div class="card empty">
-            <p>{filter === 'due' ? 'No kits have cards due today.' : 'No kits have an exam in the next 14 days.'}</p>
+            <p>No kits have an exam in the next 14 days.</p>
             <button class="btn" onClick={() => setFilter('all')}>Show all kits</button>
           </div>
         )}
         <ul class="kit-grid">
           {shown.map((k) => {
-            const cards = d!.cards.filter((c) => c.kitId === k.id).length
-            const due = dueOf(k.id)
+            const m = kitMastery(d!.cards.filter((c) => c.kitId === k.id))
             return (
               <li key={k.id}>
                 <a class="card kit-card" href={`#/kit/${k.id}`}>
@@ -185,8 +190,8 @@ export function Library({ query }: { query: URLSearchParams }) {
                   <span class="muted small">{k.sourceType === 'pdf' ? `PDF${k.pageCount ? ` · ${plural(k.pageCount, 'page')}` : ''}` : 'Pasted notes'} · added {fmtDate(k.createdAt)}</span>
                   <span class="kit-meta">
                     {k.status === 'building' ? <Badge tone="warning">Building…</Badge> : <>
-                      <span>{plural(cards, 'card')}</span>
-                      {due > 0 ? <Badge tone="accent">{due} due</Badge> : <Badge>Nothing due</Badge>}
+                      <span>{plural(m.total, 'card')}</span>
+                      <Badge tone={m.total && m.mastered === m.total ? 'success' : m.mastered + m.learning ? 'accent' : 'neutral'}>{m.total ? Math.round((m.mastered / m.total) * 100) : 0}% mastered</Badge>
                       {k.examDate && daysUntil(k.examDate) >= 0 && <Badge tone="warning">Exam {fmtDate(parseDayKey(k.examDate))}</Badge>}
                     </>}
                   </span>
