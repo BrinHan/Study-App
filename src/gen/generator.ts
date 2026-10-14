@@ -6,7 +6,7 @@
 // same GenOutput, so storage, review and explanations keep working unchanged.
 
 import nlp from 'compromise/two'
-import { createEmptyCard } from 'ts-fsrs'
+import { newProgress } from '../study/mastery'
 import type { Sentence, StudyCard, SummaryPoint } from '../lib/types'
 import { tokenize, splitSentences, isHeading, cleanHeading, isUsableSentence, singular, endsSentence } from './text'
 
@@ -280,7 +280,6 @@ export const classicGenerator: CardGenerator = {
 
     const used = new Map<string, number>()
     const cards: StudyCard[] = []
-    const now = new Date()
     keyIdx.forEach((si, n) => {
       if (n % 25 === 0) progress({ step: 'cards', text: `Writing cards (${n} of ~${keyIdx.length})`, done: n, total: keyIdx.length })
       const s = sentences[si]
@@ -294,7 +293,7 @@ export const classicGenerator: CardGenerator = {
         const prompt = s.text.slice(0, hit.start) + '_____' + s.text.slice(hit.start + hit.text.length)
         // Options are shown in lower case (except names) so capitalisation doesn't give the answer away.
         const answer = optionText(hit.text, term.pos)
-        const base = { id: `${kitId}:c${cards.length}`, kitId, prompt, answer, sourceSentenceId: s.id, hint: hintFor(answer, term.pos), topic: s.topic, fsrs: createEmptyCard(now) }
+        const base = { id: `${kitId}:c${cards.length}`, kitId, prompt, answer, sourceSentenceId: s.id, hint: hintFor(answer, term.pos), topic: s.topic, progress: newProgress() }
 
         if (quizEnabled) {
           // Distractors: other key terms of similar kind and length that are not in this sentence.

@@ -1,5 +1,3 @@
-import type { Card as FsrsCard } from 'ts-fsrs'
-
 export type KitStatus = 'building' | 'ready'
 
 export interface SummaryPoint {
@@ -57,16 +55,31 @@ export interface StudyCard {
   extraSourceIds?: string[] // compare cards cite both terms
   hint: string
   topic: string
-  fsrs: FsrsCard
-  introducedOn?: string // yyyy-mm-dd of first review, for the new-cards-per-day limit
+  progress: CardProgress
+  starred?: boolean
 }
+
+export type MasteryState = 'new' | 'learning' | 'mastered'
+
+/** Shared by every study mode: two correct answers in a row = mastered, a wrong answer resets. */
+export interface CardProgress {
+  state: MasteryState
+  streak: number
+  seen: number
+  lastSeen?: number
+}
+
+export type StudyMode = 'learn' | 'flashcards' | 'test'
+export type AnswerFormat = 'mcq' | 'written' | 'tf' | 'match' | 'flip'
 
 export interface Review {
   id: string
   cardId: string
   kitId: string
   topic: string
-  rating: 1 | 2 | 3 | 4
+  rating?: 1 | 2 | 3 | 4 // only on answers from the old FSRS review
+  mode?: StudyMode
+  format?: AnswerFormat
   pickedAnswer?: string
   correct: boolean
   reviewedAt: number
@@ -88,8 +101,20 @@ export interface StoredFile {
   blob: Blob
 }
 
+export type LearnAnswer = 'mixed' | 'mcq' | 'written'
+
 export interface Settings {
-  newPerDay: number
+  learnAnswer: LearnAnswer
+  roundSize: number
 }
 
-export const DEFAULT_SETTINGS: Settings = { newPerDay: 20 }
+export const DEFAULT_SETTINGS: Settings = { learnAnswer: 'mixed', roundSize: 7 }
+
+/** An unfinished Learn or Flashcards session, saved so it can be resumed from Home. */
+export interface StudySession {
+  id: string // `${kitId}|${mode}`
+  kitId: string
+  mode: 'learn' | 'flashcards'
+  state: unknown
+  updatedAt: number
+}

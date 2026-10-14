@@ -1,7 +1,8 @@
 // IndexedDB access. Used by the UI and by the import worker (idb works in both).
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
-import type { Kit, Sentence, StudyCard, Review, Confusion, StoredFile, Settings } from './types'
+import type { Kit, Sentence, StudyCard, Review, Confusion, StoredFile, Settings, StudySession } from './types'
 import { DEFAULT_SETTINGS } from './types'
+import { newProgress, progressFromFsrs } from '../study/mastery'
 
 interface MarginDB extends DBSchema {
   kits: { key: string; value: Kit }
@@ -10,6 +11,7 @@ interface MarginDB extends DBSchema {
   reviews: { key: string; value: Review; indexes: { kitId: string; reviewedAt: number } }
   confusions: { key: string; value: Confusion; indexes: { kitId: string } }
   files: { key: string; value: StoredFile }
+  sessions: { key: string; value: StudySession; indexes: { kitId: string } }
   meta: { key: string; value: unknown }
 }
 
@@ -38,17 +40,30 @@ export function getDB(): Promise<DB> {
   if (sim === 'blocked') return Promise.reject(new StorageError('blocked', 'Storage blocked (simulated)'))
   if (!dbPromise) {
     if (typeof indexedDB === 'undefined') return Promise.reject(new StorageError('blocked', 'IndexedDB is not available'))
-    dbPromise = openDB<MarginDB>('margin', 1, {
-      upgrade(db) {
-        db.createObjectStore('kits', { keyPath: 'id' })
-        db.createObjectStore('sentences', { keyPath: 'id' }).createIndex('kitId', 'kitId')
-        db.createObjectStore('cards', { keyPath: 'id' }).createIndex('kitId', 'kitId')
-        const r = db.createObjectStore('reviews', { keyPath: 'id' })
-        r.createIndex('kitId', 'kitId')
-        r.createIndex('reviewedAt', 'reviewedAt')
-        db.createObjectStore('confusions', { keyPath: 'id' }).createIndex('kitId', 'kitId')
-        db.createObjectStore('files', { keyPath: 'kitId' })
-        db.createObjectStore('meta')
+    dbPromise = openDB<MarginDB>('margin', 2, {
+      async upgrade(db, oldVersion, _newVersion, tx) {
+        if (oldVersion < 1) {
+          db.createObjectStore('kits', { keyPath: 'id' })
+          db.createObjectStore('sentences', { keyPath: 'id' }).createIndex('kitId', 'kitId')
+          db.createObjectStore('cards', { keyPath: 'id' }).createIndex('kitId', 'kitId')
+          const r = db.createObjectStore('reviews', { keyPath: 'id' })
+          r.createIndex('kitId', 'kitId')
+          r.createIndex('reviewedAt', 'reviewedAt')
+          db.createObjectStore('confusions', { keyPath: 'id' }).createIndex('kitId', 'kitId')
+          db.createObjectStore('files', { keyPath: 'kitId' })
+          db.createObjectStore('meta')
+        }
+        if (oldVersion < 2) {
+          // v2: study modes replace FSRS. Saved sessions get a store, and each card's FSRS state becomes mastery progress.
+          db.createObjectStore('sessions', { keyPath: 'id' }).createIndex('kitId', 'kitId')
+          if (oldVersion >= 1) {
+            let cursor = await tx.objectStore('cards').openCursor()
+            while (cursor) {
+              await cursor.update(migrateCard(cursor.value))
+              cursor = await cursor.continue()
+            }
+          }
+        }
       },
     }).catch((e) => {
       dbPromise = null
@@ -77,10 +92,23 @@ export async function sentencesForKit(kitId: string) {
 }
 export const allReviews = async () => (await getDB()).getAll('reviews')
 export const addReview = async (r: Review) => (await getDB()).put('reviews', r)
+export const deleteReview = async (id: string) => (await getDB()).delete('reviews', id)
 export const allConfusions = async () => (await getDB()).getAll('confusions')
 export const getConfusion = async (id: string) => (await getDB()).get('confusions', id)
 export const putConfusion = async (c: Confusion) => (await getDB()).put('confusions', c)
 export const getFile = async (kitId: string) => (await getDB()).get('files', kitId)
+
+export const sessionId = (kitId: string, mode: StudySession['mode']) => `${kitId}|${mode}`
+export const getSession = async (id: string) => (await getDB()).get('sessions', id)
+export const putSession = async (s: StudySession) => (await getDB()).put('sessions', s)
+export const deleteSession = async (id: string) => (await getDB()).delete('sessions', id)
+export const listSessions = async () => (await getDB()).getAll('sessions')
+
+/** Bring a card stored by an older version up to date: FSRS state becomes mastery progress. */
+export function migrateCard(raw: any): StudyCard {
+  const { fsrs, introducedOn: _introduced, ...card } = raw
+  return { ...card, progress: card.progress ?? (fsrs ? progressFromFsrs(fsrs) : newProgress()) }
+}
 
 export async function listFiles(): Promise<Omit<StoredFile, 'blob'>[]> {
   const db = await getDB()
@@ -100,11 +128,11 @@ export async function removeAllFiles() {
 
 export async function getSettings(): Promise<Settings> {
   const s = (await (await getDB()).get('meta', 'settings')) as Partial<Settings> | undefined
-  return { ...DEFAULT_SETTINGS, ...s }
+  return { ...DEFAULT_SETTINGS, ...pickSettings(s) }
 }
 export const saveSettings = async (s: Settings) => (await getDB()).put('meta', s, 'settings')
 
-async function deleteByIndex(db: DB, store: 'sentences' | 'cards' | 'reviews' | 'confusions', kitId: string) {
+async function deleteByIndex(db: DB, store: 'sentences' | 'cards' | 'reviews' | 'confusions' | 'sessions', kitId: string) {
   const tx = db.transaction(store, 'readwrite')
   let cursor = await tx.store.index('kitId').openCursor(kitId)
   while (cursor) {
@@ -116,20 +144,20 @@ async function deleteByIndex(db: DB, store: 'sentences' | 'cards' | 'reviews' | 
 
 export async function deleteKit(kitId: string) {
   const db = await getDB()
-  for (const s of ['sentences', 'cards', 'reviews', 'confusions'] as const) await deleteByIndex(db, s, kitId)
+  for (const s of ['sentences', 'cards', 'reviews', 'confusions', 'sessions'] as const) await deleteByIndex(db, s, kitId)
   await db.delete('files', kitId)
   await db.delete('kits', kitId)
 }
 
 export async function deleteEverything() {
   const db = await getDB()
-  for (const s of ['kits', 'sentences', 'cards', 'reviews', 'confusions', 'files', 'meta'] as const) await db.clear(s)
+  for (const s of ['kits', 'sentences', 'cards', 'reviews', 'confusions', 'files', 'meta', 'sessions'] as const) await db.clear(s)
 }
 
-// ---- Backup (.json). Original PDFs are left out; cards and their source sentences are kept.
+// ---- Backup (.json). Original PDFs and unfinished sessions are left out; cards and their source sentences are kept.
 export interface Backup {
   app: 'margin'
-  version: 1
+  version: 1 | 2
   exportedAt: string
   kits: Kit[]
   sentences: Sentence[]
@@ -144,7 +172,7 @@ export async function exportBackup(): Promise<Backup> {
   const [kits, sentences, cards, reviews, confusions, settings] = await Promise.all([
     db.getAll('kits'), db.getAll('sentences'), db.getAll('cards'), db.getAll('reviews'), db.getAll('confusions'), getSettings(),
   ])
-  return { app: 'margin', version: 1, exportedAt: new Date().toISOString(), kits, sentences, cards, reviews, confusions, settings }
+  return { app: 'margin', version: 2, exportedAt: new Date().toISOString(), kits, sentences, cards, reviews, confusions, settings }
 }
 
 export function parseBackup(text: string): Backup {
@@ -157,16 +185,20 @@ export function parseBackup(text: string): Backup {
   if (data?.app !== 'margin' || !Array.isArray(data.kits) || !Array.isArray(data.cards)) {
     throw new Error('This JSON file isn’t a Margin backup (it has no kits or cards list).')
   }
-  for (const c of data.cards) {
-    c.fsrs.due = new Date(c.fsrs.due)
-    if (c.fsrs.last_review) c.fsrs.last_review = new Date(c.fsrs.last_review)
-  }
-  return data
+  // Version 1 backups have FSRS cards and a newPerDay setting.
+  return { ...data, cards: data.cards.map(migrateCard), settings: { ...DEFAULT_SETTINGS, ...pickSettings(data.settings) } }
+}
+
+function pickSettings(s: Partial<Settings> | undefined): Partial<Settings> {
+  const out: Partial<Settings> = {}
+  if (s?.learnAnswer === 'mixed' || s?.learnAnswer === 'mcq' || s?.learnAnswer === 'written') out.learnAnswer = s.learnAnswer
+  if (typeof s?.roundSize === 'number' && s.roundSize >= 1) out.roundSize = s.roundSize
+  return out
 }
 
 export async function restoreBackup(b: Backup) {
   const db = await getDB()
-  const stores = ['kits', 'sentences', 'cards', 'reviews', 'confusions', 'files', 'meta'] as const
+  const stores = ['kits', 'sentences', 'cards', 'reviews', 'confusions', 'files', 'meta', 'sessions'] as const
   const tx = db.transaction(stores, 'readwrite')
   for (const s of stores) await tx.objectStore(s).clear()
   for (const k of b.kits) await tx.objectStore('kits').put(k)

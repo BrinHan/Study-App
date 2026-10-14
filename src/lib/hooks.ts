@@ -41,12 +41,12 @@ export function useOnline() {
   return online
 }
 
-// ---- Hash routing: #/today, #/kit/<id>?tab=cards, #/review?kit=<id>&mode=quiz
+// ---- Hash routing: #/home, #/kit/<id>?tab=cards, #/learn/<kitId>?cards=a,b
 export interface Route { path: string[]; query: URLSearchParams }
 
 function parse(): Route {
   const [p, q] = location.hash.replace(/^#\/?/, '').split('?')
-  return { path: p ? p.split('/').map(decodeURIComponent) : ['today'], query: new URLSearchParams(q) }
+  return { path: p ? p.split('/').map(decodeURIComponent) : ['home'], query: new URLSearchParams(q) }
 }
 
 export function useRoute(): Route {

@@ -7,7 +7,7 @@ export default defineConfig({
   base: './',
   // realpath: on some Windows setups the project folder is a redirected (virtualized) path.
   server: { fs: { allow: [process.cwd(), realpathSync.native(process.cwd())] } },
-  optimizeDeps: { include: ['compromise/two', 'ts-fsrs', 'idb'] },
+  optimizeDeps: { include: ['compromise/two', 'idb'] },
   worker: { format: 'es' },
   plugins: [
     preact(),

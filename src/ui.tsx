@@ -2,7 +2,14 @@ import type { ComponentChildren } from 'preact'
 import { addDays } from './lib/study'
 
 const PATHS: Record<string, string> = {
-  today: 'M4 5h16v15H4zM4 9h16M9 3v4M15 3v4',
+  home: 'M3 11l9-7 9 7M5 9.5V20h5v-6h4v6h5V9.5',
+  learn: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z',
+  cards: 'M7 7h13v12H7zM4 4h13v3M4 4v12h3',
+  test: 'M9 4h6v3H9zM7 5H5v16h14V5h-2M8.5 14l2.5 2.5 4.5-5',
+  star: 'M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z',
+  close: 'M6 6l12 12M18 6 6 18',
+  search: 'M10.5 4a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zM15.5 15.5 20 20',
+  plus: 'M12 5v14M5 12h14',
   library: 'M5 4h4v16H5zM11 4h4v16h-4zM17 5l3 .8-3.6 14.5-3-.8',
   progress: 'M4 20V10M10 20V4M16 20v-7M22 20H2',
   settings: 'M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1',

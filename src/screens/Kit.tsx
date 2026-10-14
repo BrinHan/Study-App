@@ -1,12 +1,19 @@
 import { useEffect, useState } from 'preact/hooks'
 import { deleteKit, getFile, putKit, sentencesForKit } from '../lib/db'
 import { go, notifyDataChanged, useAsync } from '../lib/hooks'
-import { cardStatus, cite, formatInterval, kitQueue, loadStudyData, missesByCard, parseDayKey, type CardStatus } from '../lib/study'
-import type { Kit, Sentence } from '../lib/types'
+import { daysUntil, examNudge, loadStudyData, parseDayKey } from '../lib/study'
+import type { Kit, MasteryState, Sentence } from '../lib/types'
+import { kitMastery, STATUS_LABEL } from '../study/mastery'
 import { useImportState, ImportSteps } from './Library'
-import { Badge, Loading, Notice, PageHeader, Prompt, fmtDate, mb, plural, type Tone } from '../ui'
+import { MODES, MasteryBar, StarButton, masteryLine } from './study/shared'
+import { Badge, Icon, Loading, Notice, PageHeader, Prompt, fmtDate, mb, plural, type Tone } from '../ui'
 
-const STATUS_TONE: Record<CardStatus, Tone> = { New: 'neutral', Learning: 'accent', Mastered: 'success', 'Missed twice': 'danger' }
+const STATUS_TONE: Record<MasteryState, Tone> = { new: 'neutral', learning: 'accent', mastered: 'success' }
+type CardFilter = MasteryState | 'all' | 'starred'
+const FILTERS: { id: CardFilter; label: string }[] = [
+  { id: 'all', label: 'All' }, { id: 'new', label: STATUS_LABEL.new }, { id: 'learning', label: STATUS_LABEL.learning },
+  { id: 'mastered', label: STATUS_LABEL.mastered }, { id: 'starred', label: '★ Starred' },
+]
 
 async function load(id: string) {
   const d = await loadStudyData()
@@ -65,8 +72,8 @@ export function KitScreen({ id, query }: { id: string; query: URLSearchParams })
   const [notes, setNotes] = useState<string | null>(null)
   const [saved, setSaved] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
-  const [statusFilter, setStatusFilter] = useState<CardStatus | 'All'>('All')
-  const tab = query.get('tab') ?? 'summary'
+  const [filter, setFilter] = useState<CardFilter>('all')
+  const tab = query.get('tab') ?? 'cards'
 
   if (loading) return <Loading label="Loading kit…" />
   if (error) return <Notice tone="danger" title="This kit couldn’t be loaded" actions={<a class="btn" href="#/library">Back to Library</a>}>{String(error)}</Notice>
@@ -76,11 +83,17 @@ export function KitScreen({ id, query }: { id: string; query: URLSearchParams })
   if (kit.status === 'building') return <Building kit={kit} />
 
   const cards = d.cards.filter((c) => c.kitId === kit.id)
-  const due = kitQueue(d, kit.id).length
-  const misses = missesByCard(d.reviews.filter((r) => r.kitId === kit.id))
-  const statuses = cards.map((c) => ({ c, status: cardStatus(c, misses.get(c.id) ?? 0) }))
-  const count = (s: CardStatus) => statuses.filter((x) => x.status === s).length
-  const mcqCount = cards.filter((c) => c.type === 'mcq').length
+  const counts = kitMastery(cards)
+  const studyable = cards.filter((c) => c.type !== 'compare')
+  const count = (f: CardFilter) => (f === 'all' ? cards.length : f === 'starred' ? cards.filter((c) => c.starred).length : counts[f])
+  const shown = cards.filter((c) => filter === 'all' || (filter === 'starred' ? c.starred : c.progress.state === filter))
+  const nudge = examNudge(kit)
+  const examLeft = kit.examDate ? daysUntil(kit.examDate) : -1
+  const disabled: Record<string, string | null> = {
+    learn: studyable.length ? null : 'No cards to learn yet',
+    flashcards: cards.length ? null : 'No cards yet',
+    test: studyable.length < 4 ? 'Needs at least 4 cards' : null,
+  }
 
   const save = async (patch: Partial<Kit>, msg: string) => {
     await putKit({ ...kit, ...patch })
@@ -102,18 +115,43 @@ export function KitScreen({ id, query }: { id: string; query: URLSearchParams })
       ) : (
         <PageHeader
           title={kit.title}
-          sub={<>{kit.sourceType === 'pdf' ? `${kit.fileName}${kit.pageCount ? ` · ${plural(kit.pageCount, 'page')}` : ''}` : 'Pasted notes'} · {plural(cards.length, 'card')} · added {fmtDate(kit.createdAt)} <button class="link" onClick={() => { setName(kit.title); setRenaming(true) }}>Rename</button></>}
-          actions={<>
-            {due > 0 ? <a class="btn primary" href={`#/review?kit=${kit.id}`}>Review {plural(due, 'due card')}</a> : <button class="btn" disabled>No cards due</button>}
-            {kit.quizEnabled && mcqCount > 0 ? <a class="btn" href={`#/review?mode=quiz&kit=${kit.id}`}>Practice quiz</a> : <button class="btn" disabled title="See the note below">Practice quiz</button>}
+          sub={<>
+            {kit.sourceType === 'pdf' ? `${kit.fileName}${kit.pageCount ? ` · ${plural(kit.pageCount, 'page')}` : ''}` : 'Pasted notes'} · {plural(cards.length, 'card')} · added {fmtDate(kit.createdAt)}
+            {examLeft >= 0 && <> · <span class="warning-text">Exam {fmtDate(parseDayKey(kit.examDate!))} ({examLeft === 0 ? 'today' : `in ${plural(examLeft, 'day')}`})</span></>}
+            {' '}<button class="link" onClick={() => { setName(kit.title); setRenaming(true) }}>Rename</button>
           </>}
         />
       )}
       {saved && <p class="muted small" role="status">{saved}</p>}
 
+      <nav class="mode-tiles" aria-label="Study modes">
+        {MODES.map((m) => disabled[m.id] ? (
+          <span key={m.id} class="mode-tile disabled" aria-disabled="true">
+            <span class="mode-icon"><Icon name={m.icon} /></span>
+            <span class="mode-text"><strong>{m.label}</strong><span class="small muted">{disabled[m.id]}</span></span>
+          </span>
+        ) : (
+          <a key={m.id} class="mode-tile" href={`#/${m.id}/${kit.id}`}>
+            <span class="mode-icon"><Icon name={m.icon} /></span>
+            <span class="mode-text"><strong>{m.label}</strong><span class="small muted">{m.blurb}</span></span>
+          </a>
+        ))}
+      </nav>
+
+      {nudge !== null && !disabled.test && (
+        <Notice tone="warning" title={nudge === 0 ? 'Your exam is today' : `Your exam is in ${plural(nudge, 'day')}`} actions={<a class="btn primary" href={`#/test/${kit.id}`}>Take a practice test</a>}>
+          A practice test shows which topics need another round of Learn.
+        </Notice>
+      )}
+
+      <section class="card stack-sm" aria-label="Your progress">
+        <div class="row-line"><strong>Your progress</strong><span class="small muted">{masteryLine(counts)}</span></div>
+        <MasteryBar counts={counts} large />
+      </section>
+
       {!kit.quizEnabled && (
-        <Notice tone="warning" title="Flashcards only, no quiz" actions={<a class="btn" href="#/library?import=paste">Paste more notes as a new kit</a>}>
-          {kit.quizReason ?? 'There wasn’t enough text to make quiz questions.'}
+        <Notice tone="warning" title="Short notes, simpler questions" actions={<a class="btn" href="#/library?import=paste">Paste more notes as a new kit</a>}>
+          {kit.quizReason ?? 'There wasn’t enough text to write multiple-choice questions.'} Multiple choice uses the kit’s other answers as options.
         </Notice>
       )}
 
@@ -133,8 +171,8 @@ export function KitScreen({ id, query }: { id: string; query: URLSearchParams })
       </div>
 
       <nav class="tabs" aria-label="Kit sections">
-        <a href={tabLink('summary')} aria-current={tab === 'summary' ? 'page' : undefined}>Summary</a>
         <a href={tabLink('cards')} aria-current={tab === 'cards' ? 'page' : undefined}>Cards ({cards.length})</a>
+        <a href={tabLink('summary')} aria-current={tab === 'summary' ? 'page' : undefined}>Summary</a>
         <a href={tabLink('source')} aria-current={tab === 'source' ? 'page' : undefined}>Source pages</a>
       </nav>
 
@@ -155,27 +193,29 @@ export function KitScreen({ id, query }: { id: string; query: URLSearchParams })
         )}
         {tab === 'cards' && (
           <>
-            <div class="segmented" role="group" aria-label="Filter cards by status">
-              {(['All', 'New', 'Learning', 'Mastered', 'Missed twice'] as const).map((s) => (
-                <button key={s} class={statusFilter === s ? 'on' : ''} aria-pressed={statusFilter === s} onClick={() => setStatusFilter(s)}>
-                  {s} <span class="muted">{s === 'All' ? cards.length : count(s)}</span>
+            <div class="segmented" role="group" aria-label="Filter cards">
+              {FILTERS.map((f) => (
+                <button key={f.id} class={filter === f.id ? 'on' : ''} aria-pressed={filter === f.id} onClick={() => setFilter(f.id)}>
+                  {f.label} <span class="muted">{count(f.id)}</span>
                 </button>
               ))}
             </div>
             <ul class="rows">
-              {statuses.filter((x) => statusFilter === 'All' || x.status === statusFilter).map(({ c, status }) => (
+              {shown.map((c) => (
                 <li class="row card-row" key={c.id}>
                   <span class="row-main"><Prompt text={c.prompt} /></span>
                   <span class="answer">{c.type === 'compare' ? c.answer : `→ ${c.answer}`}</span>
                   <span class="row-tags">
-                    <Badge tone={STATUS_TONE[status]}>{status}</Badge>
-                    <span class="muted small">{c.type === 'mcq' ? 'Quiz' : c.type === 'compare' ? 'Compare' : 'Flashcard'}</span>
-                    {status !== 'New' && <span class="muted small">{c.fsrs.due <= new Date() ? 'due now' : `due in ${formatInterval(c.fsrs.due.getTime() - Date.now())}`}</span>}
+                    <Badge tone={STATUS_TONE[c.progress.state]}>{STATUS_LABEL[c.progress.state]}</Badge>
+                    <span class="muted small">{c.type === 'mcq' ? 'Multiple choice' : c.type === 'compare' ? 'Compare' : 'Fill in'}</span>
+                    <StarButton card={c} />
                   </span>
                 </li>
               ))}
             </ul>
-            {statuses.length > 0 && statuses.every((x) => statusFilter !== 'All' && x.status !== statusFilter) && <p class="muted">No cards are “{statusFilter}” right now.</p>}
+            {cards.length > 0 && shown.length === 0 && (
+              <p class="muted">{filter === 'starred' ? 'No starred cards yet. Star the hard ones to study just those.' : `No cards are “${FILTERS.find((f) => f.id === filter)!.label}” right now.`}</p>
+            )}
           </>
         )}
         {tab === 'source' && (
