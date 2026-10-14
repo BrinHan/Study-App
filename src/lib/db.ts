@@ -132,7 +132,7 @@ export async function getSettings(): Promise<Settings> {
 }
 export const saveSettings = async (s: Settings) => (await getDB()).put('meta', s, 'settings')
 
-async function deleteByIndex(db: DB, store: 'sentences' | 'cards' | 'reviews' | 'confusions', kitId: string) {
+async function deleteByIndex(db: DB, store: 'sentences' | 'cards' | 'reviews' | 'confusions' | 'sessions', kitId: string) {
   const tx = db.transaction(store, 'readwrite')
   let cursor = await tx.store.index('kitId').openCursor(kitId)
   while (cursor) {
@@ -144,14 +144,14 @@ async function deleteByIndex(db: DB, store: 'sentences' | 'cards' | 'reviews' | 
 
 export async function deleteKit(kitId: string) {
   const db = await getDB()
-  for (const s of ['sentences', 'cards', 'reviews', 'confusions'] as const) await deleteByIndex(db, s, kitId)
+  for (const s of ['sentences', 'cards', 'reviews', 'confusions', 'sessions'] as const) await deleteByIndex(db, s, kitId)
   await db.delete('files', kitId)
   await db.delete('kits', kitId)
 }
 
 export async function deleteEverything() {
   const db = await getDB()
-  for (const s of ['kits', 'sentences', 'cards', 'reviews', 'confusions', 'files', 'meta'] as const) await db.clear(s)
+  for (const s of ['kits', 'sentences', 'cards', 'reviews', 'confusions', 'files', 'meta', 'sessions'] as const) await db.clear(s)
 }
 
 // ---- Backup (.json). Original PDFs are left out; cards and their source sentences are kept.
@@ -194,7 +194,7 @@ export function parseBackup(text: string): Backup {
 
 export async function restoreBackup(b: Backup) {
   const db = await getDB()
-  const stores = ['kits', 'sentences', 'cards', 'reviews', 'confusions', 'files', 'meta'] as const
+  const stores = ['kits', 'sentences', 'cards', 'reviews', 'confusions', 'files', 'meta', 'sessions'] as const
   const tx = db.transaction(stores, 'readwrite')
   for (const s of stores) await tx.objectStore(s).clear()
   for (const k of b.kits) await tx.objectStore('kits').put(k)
