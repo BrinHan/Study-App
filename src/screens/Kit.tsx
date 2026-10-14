@@ -171,8 +171,8 @@ export function KitScreen({ id, query }: { id: string; query: URLSearchParams })
       </div>
 
       <nav class="tabs" aria-label="Kit sections">
-        <a href={tabLink('summary')} aria-current={tab === 'summary' ? 'page' : undefined}>Summary</a>
         <a href={tabLink('cards')} aria-current={tab === 'cards' ? 'page' : undefined}>Cards ({cards.length})</a>
+        <a href={tabLink('summary')} aria-current={tab === 'summary' ? 'page' : undefined}>Summary</a>
         <a href={tabLink('source')} aria-current={tab === 'source' ? 'page' : undefined}>Source pages</a>
       </nav>
 
@@ -193,27 +193,29 @@ export function KitScreen({ id, query }: { id: string; query: URLSearchParams })
         )}
         {tab === 'cards' && (
           <>
-            <div class="segmented" role="group" aria-label="Filter cards by status">
-              {(['All', 'New', 'Learning', 'Mastered', 'Missed twice'] as const).map((s) => (
-                <button key={s} class={statusFilter === s ? 'on' : ''} aria-pressed={statusFilter === s} onClick={() => setStatusFilter(s)}>
-                  {s} <span class="muted">{s === 'All' ? cards.length : count(s)}</span>
+            <div class="segmented" role="group" aria-label="Filter cards">
+              {FILTERS.map((f) => (
+                <button key={f.id} class={filter === f.id ? 'on' : ''} aria-pressed={filter === f.id} onClick={() => setFilter(f.id)}>
+                  {f.label} <span class="muted">{count(f.id)}</span>
                 </button>
               ))}
             </div>
             <ul class="rows">
-              {statuses.filter((x) => statusFilter === 'All' || x.status === statusFilter).map(({ c, status }) => (
+              {shown.map((c) => (
                 <li class="row card-row" key={c.id}>
                   <span class="row-main"><Prompt text={c.prompt} /></span>
                   <span class="answer">{c.type === 'compare' ? c.answer : `→ ${c.answer}`}</span>
                   <span class="row-tags">
-                    <Badge tone={STATUS_TONE[status]}>{status}</Badge>
-                    <span class="muted small">{c.type === 'mcq' ? 'Quiz' : c.type === 'compare' ? 'Compare' : 'Flashcard'}</span>
-                    {status !== 'New' && <span class="muted small">{c.fsrs.due <= new Date() ? 'due now' : `due in ${formatInterval(c.fsrs.due.getTime() - Date.now())}`}</span>}
+                    <Badge tone={STATUS_TONE[c.progress.state]}>{STATUS_LABEL[c.progress.state]}</Badge>
+                    <span class="muted small">{c.type === 'mcq' ? 'Multiple choice' : c.type === 'compare' ? 'Compare' : 'Fill in'}</span>
+                    <StarButton card={c} />
                   </span>
                 </li>
               ))}
             </ul>
-            {statuses.length > 0 && statuses.every((x) => statusFilter !== 'All' && x.status !== statusFilter) && <p class="muted">No cards are “{statusFilter}” right now.</p>}
+            {cards.length > 0 && shown.length === 0 && (
+              <p class="muted">{filter === 'starred' ? 'No starred cards yet. Star the hard ones to study just those.' : `No cards are “${FILTERS.find((f) => f.id === filter)!.label}” right now.`}</p>
+            )}
           </>
         )}
         {tab === 'source' && (
