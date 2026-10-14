@@ -37,3 +37,13 @@ function matchGroups(cards: StudyCard[]): { groups: StudyCard[][]; rest: StudyCa
   return { groups: groups.filter((g) => g.length >= 4), rest }
 }
 
+function draftFor(kind: Exclude<QType, 'match'>, card: StudyCard, pool: StudyCard[], seed: string): Draft {
+  if (kind === 'written') return { kind, cardId: card.id }
+  const choices = choicesFor(card, pool, seed)
+  if (!choices) return { kind: 'written', cardId: card.id }
+  if (kind === 'mcq') return { kind, cardId: card.id, choices }
+  const isTrue = shuffled([true, false], `${seed}:${card.id}`)[0]
+  const shown = isTrue ? card.answer : choices.find((c) => c !== card.answer)!
+  return { kind, cardId: card.id, statement: card.prompt.replace('_____', shown), shown, isTrue }
+}
+
