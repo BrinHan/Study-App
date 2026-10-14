@@ -212,6 +212,60 @@ a.row-main { min-height: 36px; display: inline-flex; align-items: center; }
 .card .meter { background: var(--bg-canvas); }
 .meter.large { height: 10px; }
 
+/* ---------- Kit page: study mode tiles */
+.mode-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.mode-tile { display: flex; align-items: center; gap: 14px; min-height: 72px; padding: 14px 16px; border-radius: 10px; background: var(--bg-surface); border: 1px solid var(--border-subtle); color: var(--text-primary); text-decoration: none; }
+a.mode-tile:hover { border-color: var(--accent-primary); }
+.mode-tile.disabled { opacity: 0.55; }
+.mode-icon { display: inline-grid; place-items: center; width: 40px; height: 40px; flex: none; border-radius: 8px; background: var(--accent-tint); color: var(--accent-text); }
+.mode-text { display: flex; flex-direction: column; gap: 2px; font-size: 16px; min-width: 0; }
+@media (max-width: 1100px) and (min-width: 761px) { .mode-tile { flex-direction: column; align-items: flex-start; gap: 10px; } }
+.star { display: inline-grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 6px; background: none; color: var(--text-secondary); cursor: pointer; }
+.star:hover { color: var(--text-primary); }
+.star.on { color: var(--accent-text); }
+.star.on svg path { fill: currentColor; }
+
+/* ---------- Focus layout for study modes */
+.focus { min-height: 100vh; display: flex; flex-direction: column; }
+.study-header { position: sticky; top: 0; z-index: 2; display: grid; grid-template-columns: 1fr minmax(0, auto) 1fr; align-items: center; gap: 12px; padding: 10px 24px; background: var(--bg-canvas); border-bottom: 1px solid var(--border-subtle); }
+.study-label { display: flex; flex-direction: column; align-items: center; text-align: center; min-width: 0; }
+.study-kit { font-size: 14px; max-width: 40vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.study-actions { justify-self: end; display: flex; gap: 8px; }
+.icon-btn { width: 44px; padding: 0; }
+.mode-switch { justify-self: start; position: relative; }
+.mode-switch summary { list-style: none; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px; border-radius: 6px; border: 1px solid var(--border-subtle); background: var(--bg-surface); font-weight: 700; cursor: pointer; }
+.mode-switch summary::-webkit-details-marker { display: none; }
+.mode-switch ul { list-style: none; position: absolute; top: calc(100% + 6px); left: 0; z-index: 3; min-width: 190px; padding: 6px; border-radius: 10px; background: var(--bg-surface); border: 1px solid var(--border-subtle); }
+.mode-switch a { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 10px; border-radius: 6px; color: var(--text-primary); text-decoration: none; font-weight: 600; }
+.mode-switch a:hover, .mode-switch a[aria-current="page"] { background: var(--accent-tint); }
+.study-progress { height: 4px; background: var(--bg-surface); }
+.study-progress div { height: 100%; background: var(--accent-primary); }
+.study-col { width: 100%; max-width: 640px; margin: 0 auto; padding: 28px 20px 64px; display: flex; flex-direction: column; gap: 18px; }
+.study-col.wide { max-width: 760px; }
+.study-meta { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.feedback { display: flex; flex-direction: column; gap: 12px; padding: 16px 18px; border-radius: 10px; background: var(--bg-surface); border: 1px solid var(--border-subtle); }
+.feedback.good { border-color: rgba(169, 184, 154, 0.45); }
+.feedback.bad { border-color: rgba(217, 154, 134, 0.45); }
+.feedback-title { font-weight: 700; }
+.feedback.good .feedback-title { color: var(--success); }
+.feedback.bad .feedback-title { color: var(--danger); }
+.continue-row { display: flex; justify-content: flex-end; align-items: center; gap: 12px; flex-wrap: wrap; }
+.typed { display: flex; gap: 10px; }
+.typed input { flex: 1; }
+.compare-answers { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.compare-answers > div { padding: 10px 12px; border-radius: 6px; background: var(--bg-canvas); display: flex; flex-direction: column; gap: 2px; }
+.struck { text-decoration: line-through; color: var(--text-secondary); }
+.result-list { list-style: none; display: flex; flex-direction: column; gap: 6px; text-align: left; width: 100%; }
+.result-list li { display: flex; gap: 10px; align-items: baseline; }
+.ok-mark { color: var(--success); font-weight: 700; }
+.bad-mark { color: var(--danger); font-weight: 700; }
+.checkpoint { align-items: center; text-align: center; }
+.checkpoint > .card { align-self: stretch; }
+.score-ring { --pct: 0%; width: 120px; height: 120px; flex: none; border-radius: 50%; display: grid; place-items: center; background: conic-gradient(var(--success) 0 var(--pct), var(--bg-canvas) var(--pct) 100%); }
+.score-ring span { display: grid; place-items: center; width: 94px; height: 94px; border-radius: 50%; background: var(--bg-surface); font-size: 24px; font-weight: 800; }
+.check { display: flex; align-items: center; gap: 10px; min-height: 44px; cursor: pointer; }
+.check input { width: 20px; height: 20px; min-height: 0; accent-color: var(--accent-primary); }
+
 
 /* ---------- Narrow screens: sidebar becomes an icon rail */
 @media (max-width: 760px) {
