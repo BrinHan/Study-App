@@ -7,3 +7,8 @@ export const STATUS_LABEL: Record<MasteryState, string> = { new: 'Not studied', 
 
 export const newProgress = (): CardProgress => ({ state: 'new', streak: 0, seen: 0 })
 
+export function applyAnswer(p: CardProgress, correct: boolean, now = Date.now()): CardProgress {
+  const streak = correct ? p.streak + 1 : 0
+  return { state: streak >= MASTERED_STREAK ? 'mastered' : 'learning', streak, seen: p.seen + 1, lastSeen: now }
+}
+
