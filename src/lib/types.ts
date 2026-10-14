@@ -1,5 +1,3 @@
-import type { Card as FsrsCard } from 'ts-fsrs'
-
 export type KitStatus = 'building' | 'ready'
 
 export interface SummaryPoint {
@@ -57,9 +55,20 @@ export interface StudyCard {
   extraSourceIds?: string[] // compare cards cite both terms
   hint: string
   topic: string
-  fsrs: FsrsCard
-  introducedOn?: string // yyyy-mm-dd of first review, for the new-cards-per-day limit
+  progress: CardProgress
+  starred?: boolean
 }
+
+export type MasteryState = 'new' | 'learning' | 'mastered'
+
+/** Shared by every study mode: two correct answers in a row = mastered, a wrong answer resets. */
+export interface CardProgress {
+  state: MasteryState
+  streak: number
+  seen: number
+  lastSeen?: number
+}
+
 
 export interface Review {
   id: string
