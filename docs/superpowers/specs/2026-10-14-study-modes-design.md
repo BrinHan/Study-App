@@ -113,3 +113,92 @@ Backups export `version: 2`. `parseBackup` accepts version 1 and converts its ca
 
 `#/review` and `#/done` are removed; old links show the existing "page doesn't exist" notice, which points to Home.
 
+### App shell
+- The sidebar shows Home, Library, Progress and Settings. The due count is removed.
+- A new **top bar** above main content holds a search box and an "Import notes" button.
+  - Typing in the search box and pressing Enter goes to `#/library?q=…`.
+  - The Import button goes to `#/library?import=pdf`.
+- Study routes render **focus layout**, with no sidebar or top bar. A `StudyHeader` has:
+  - a mode switcher (left), a dropdown of the three modes linking to the same kit;
+  - a centred progress label;
+  - Options (when the mode has any) and a ✕ button that returns to the kit (right).
+  - A thin progress bar sits under the header.
+- Study content is a centred column, at most 640px wide.
+
+### Home
+- When there are no kits, it shows the existing first-launch card, reworded for the study modes.
+- **Jump back in:** the most recently updated saved session, showing the kit, mode, a progress line, the mastery bar and a Continue button. With no session it shows the most recently studied kit and "Study again" (Learn). With nothing studied it shows the newest kit and "Start learning".
+- Exam countdown badges appear on the hero and on recent kits. When an exam is 3 days away or less, the card also says "Take a practice test".
+- **Recent kits:** up to 6 kits, ordered by last activity (latest answer, else creation). Each shows a mastery bar.
+- **Mix-ups to fix:** the existing list. "Compare them" opens Flashcards with the compare card.
+- Kits that are still building show the existing notice.
+
+### Kit page
+- The header has the title, source line, card count, exam countdown, and an overflow menu with Rename and Delete. The existing rename form and delete confirmation are kept.
+- **Mode tiles** for Learn, Flashcards and Test, each with a one-line description.
+  - Test is disabled when the kit has fewer than 4 study cards.
+  - Learn is disabled when it has none.
+  - Each disabled tile shows the reason.
+- A nudge (warning notice) appears when the exam is 3 days away or less.
+- A **progress card** shows the mastery bar and counts.
+- The exam date and kit notes fields keep their current position.
+- Tabs are **Cards** (default), Summary and Source pages.
+  - The Cards filter is All / Not studied / Still learning / Mastered / ★ Starred.
+  - Each row has the prompt, answer, a status badge, its type and a star toggle (an `aria-pressed` button).
+  - "Missed twice" and "due in" are removed.
+
+### Learn
+- **Question:** the topic and a status badge, then the prompt with its blank.
+  - Multiple choice: 4 options, keys 1–4.
+  - Written: a text input with Enter to submit, plus a "Don't know?" link, which counts as wrong.
+- **Feedback:**
+  - Correct: a short success line ("small typo" when close).
+  - Wrong: the existing source quote with the answer highlighted, the AI explanation if present, and "Why not X?" for a wrong multiple-choice pick.
+  - Written wrong: shows your answer next to the correct one, plus "I was right", which re-records the answer as correct.
+  - Continue with Enter, Space or the button.
+  - Wrong multiple-choice picks feed `recordConfusion`, as today.
+- **Round checkpoint:** round N done, right/wrong count, mastery ring (mastered / eligible), per-card ✓/✕ list, and Continue to round N+1.
+- **Finished:** "You've learned every card", with buttons for Take a test, Flashcards, and Back to kit. The session is deleted.
+- **Options panel:** the answer format (mixed / multiple choice / typed), Starred only, and Restart Learn. Changing an option restarts the session after a confirmation.
+- Every answer updates `progress`, writes a `Review`, saves the session, and calls `notifyDataChanged`.
+
+### Flashcards
+- **Flip card:** the front shows the prompt with its blank (or the answer, when starting with the answer side), and the back shows the answer. The star is in the corner.
+  - Click, Space or Enter flips the card.
+  - With sort off, ←/→ move between cards and Previous/Next buttons are shown.
+- **Sort mode** (default on): ✕ Still learning (key 1, or ←) and ✓ Know (key 2, or →), with counters on both sides, and Undo (key Z).
+  - Each sort updates `progress` and logs a `Review` with `format: 'flip'`.
+- **Options:** Sort on/off, Shuffle, Start with (Sentence / Term), and Starred only.
+- **End of deck:** shows the counts, then "Study the N still-learning cards" or "Restart all".
+- Compare cards show "A vs B: what's the difference?" on the front, and both source quotes on the back.
+- The session is saved on every change.
+
+### Test
+- **Setup** (a centred card): Questions (10 / 20 / All), Starred only, and the four question-type checkboxes (at least one must stay checked). Then Start test.
+  - The wireframe's "Answer with: Term / Sentence" option is dropped, because it isn't meaningful for cloze cards.
+- **Sheet:** one scrolling page grouped by type. The header shows "N / M answered". There is no feedback until Submit.
+  - Submitting with unanswered questions asks for confirmation.
+  - True/False: the statement with a term highlighted, then True and False buttons.
+  - Multiple choice: an option list.
+  - Matching: each prompt row has a `<select>` of terms (accessible, and works on mobile). A tap-to-pair UI was considered but not chosen for this round.
+  - Written: a text input.
+- **Results:** a score ring and "N of M", the weakest topic, and two buttons: "Learn the N you missed" (`#/learn/<kit>?cards=…`) and New test.
+  - Below them is a list of each answer with your answer, the correct answer, "I was right" on written answers (re-scores), and an expandable source quote.
+  - Every answer updates `progress` and logs a `Review` (`mode: 'test'`).
+
+### Progress
+- Mastered now means mastered under the new rule.
+- "Reviews" are renamed "answers".
+- Per-kit bars use Not studied / Still learning / Mastered.
+- The weak-topic "Practice" button opens Learn for that kit.
+
+### Settings
+- Remove "Daily new cards".
+- Add a "Learn" section with the default answer format and round size (5 / 7 / 10).
+
+### Library
+- Filters are All / Exam soon (Due today is removed).
+- Each kit card shows the card count, its mastery % and the exam badge.
+- `q` filters by title.
+- The import success notice says "Start learning", which opens Learn.
+
