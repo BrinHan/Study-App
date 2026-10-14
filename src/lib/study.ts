@@ -39,87 +39,18 @@ export async function recordAnswer(card: StudyCard, correct: boolean, meta: Answ
   return { card: updated, reviewId }
 }
 
-export function nextIntervals(card: StudyCard, now = new Date()): Record<Grade, string> {
-  const p = scheduler.repeat(card.fsrs, now)
-  const out = {} as Record<Grade, string>
-  for (const g of [1, 2, 3, 4] as Grade[]) out[g] = formatInterval(p[g].card.due.getTime() - now.getTime())
-  return out
-}
-
-export function applyRating(card: StudyCard, rating: Grade, now = new Date()): StudyCard {
-  const { card: next } = scheduler.next(card.fsrs, now, rating)
-  return { ...card, fsrs: next, introducedOn: card.introducedOn ?? dayKey(now) }
-}
-
-// ---- Loading everything at once is fine at concept scale (thousands of cards).
-export interface StudyData { kits: Kit[]; cards: StudyCard[]; reviews: Review[]; confusions: Confusion[]; settings: Settings }
-export async function loadStudyData(): Promise<StudyData> {
-  const [kits, cards, reviews, confusions, settings] = await Promise.all([listKits(), allCards(), allReviews(), allConfusions(), getSettings()])
-  const ready = new Set(kits.filter((k) => k.status === 'ready').map((k) => k.id))
-  return { kits, cards: cards.filter((c) => ready.has(c.kitId)), reviews, confusions, settings }
-}
-
-/**
- * Today's queue: due learning/review cards, then extra cards for upcoming exams (so every card is
- * seen at least twice before the exam), then new cards up to the daily limit.
- */
-export function buildQueue(d: StudyData, now = new Date()): StudyCard[] {
-  const today = dayKey(now)
-  const cards = d.cards
-  const dayStart = startOfDay(now).getTime()
-  const seenToday = new Set(d.reviews.filter((r) => r.reviewedAt >= dayStart).map((r) => r.cardId))
-  const due = cards
-    .filter((c) => c.fsrs.state !== State.New && c.fsrs.due <= now)
-    .sort((a, b) => a.fsrs.state - b.fsrs.state || a.fsrs.due.getTime() - b.fsrs.due.getTime())
-  const chosen = new Set(due.map((c) => c.id))
-
-  const extra: StudyCard[] = []
-  const examKits = d.kits.filter((k) => k.examDate && daysUntil(k.examDate, now) >= 1)
-  const byKit = new Map<string, StudyCard[]>()
-  if (examKits.length) for (const c of cards) (byKit.get(c.kitId) ?? byKit.set(c.kitId, []).get(c.kitId)!).push(c)
-  for (const kit of examKits) {
-    const left = daysUntil(kit.examDate!, now)
-    const behind = (byKit.get(kit.id) ?? []).filter((c) => c.fsrs.reps < 2 && !chosen.has(c.id) && !seenToday.has(c.id))
-    const viewsNeeded = behind.reduce((s, c) => s + (2 - c.fsrs.reps), 0)
-    const quota = Math.ceil(viewsNeeded / left)
-    behind.sort((a, b) => b.fsrs.reps - a.fsrs.reps).slice(0, quota).forEach((c) => { extra.push(c); chosen.add(c.id) })
-  }
-
-  const introducedToday = d.cards.filter((c) => c.introducedOn === today).length
-  const newLeft = Math.max(0, d.settings.newPerDay - introducedToday)
-  const order = new Map(d.kits.map((k, i) => [k.id, i]))
-  const fresh = cards
-    .filter((c) => c.fsrs.state === State.New && !chosen.has(c.id))
-    .sort((a, b) => (order.get(b.kitId)! - order.get(a.kitId)!) || byId.compare(a.id, b.id))
-    .slice(0, newLeft)
-  return [...due, ...extra, ...fresh]
-}
-
-const byId = new Intl.Collator(undefined, { numeric: true })
-
-// One queue per loaded StudyData: screens ask for it (and per-kit slices) many times per render.
-const queueCache = new WeakMap<StudyData, StudyCard[]>()
-export function todayQueue(d: StudyData): StudyCard[] {
-  let q = queueCache.get(d)
-  if (!q) queueCache.set(d, (q = buildQueue(d)))
-  return q
-}
-
-/** A kit's share of today's queue (the daily new-card limit is shared across kits). */
-export const kitQueue = (d: StudyData, kitId: string) => todayQueue(d).filter((c) => c.kitId === kitId)
-
-export function dueByKit(d: StudyData): Map<string, number> {
+/** When each kit was last studied (its latest answer). */
+export function lastActivity(d: StudyData): Map<string, number> {
   const m = new Map<string, number>()
-  for (const c of todayQueue(d)) m.set(c.kitId, (m.get(c.kitId) ?? 0) + 1)
+  for (const r of d.reviews) if (r.reviewedAt > (m.get(r.kitId) ?? 0)) m.set(r.kitId, r.reviewedAt)
   return m
 }
 
-/** Cards that become due later today (learning steps), for the "all caught up" message. */
-export function laterToday(d: StudyData, now = new Date()) {
-  const end = addDays(now, 1)
-  const soon = d.cards.filter((c) => c.fsrs.state !== State.New && c.fsrs.due > now && c.fsrs.due < end)
-  const next = soon.reduce<Date | null>((m, c) => (!m || c.fsrs.due < m ? c.fsrs.due : m), null)
-  return { count: soon.length, next }
+/** Days until the kit's exam when it's 0–3 days away (time to take a practice test), else null. */
+export function examNudge(kit: Pick<Kit, 'examDate'>, now = new Date()): number | null {
+  if (!kit.examDate) return null
+  const left = daysUntil(kit.examDate, now)
+  return left >= 0 && left <= 3 ? left : null
 }
 
 /** Number of cards due on each of the next `days` days; day 0 is today's queue. */
