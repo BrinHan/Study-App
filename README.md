@@ -112,16 +112,16 @@ Bundle: the app loads 108 KB of JS (36 KB gzipped). The worker (compromise + gen
 
 | Where | State | What the user sees |
 |---|---|---|
-| Today | First launch | What Margin does, plus Choose a PDF / Paste text |
-| Today | All caught up | When the next cards come back, plus Practice quiz / Import more notes |
-| Today | Loading, kit still building | Skeleton; "Still building" with a link to progress |
+| Home | First launch | What Margin does, plus Choose a PDF or photos / Paste text |
+| Home | Nothing studied yet; kit still building | "Start learning" on the newest kit; "Still building" with a link to progress |
 | Any | Storage blocked (private window) | Explanation and browser-specific fix steps |
-| Library | Empty, importing (cancelable), done | Step list with Cancel import; card count, time, Start review |
+| Library | Empty, importing (cancelable), done, no search match | Step list with Cancel import; card count, time, Start learning; Show all kits |
 | Library | Scanned PDF, > 10 MB, damaged/locked PDF, too little text, storage full | What happened, then Paste text instead / Choose another PDF / Free up space in Settings |
 | Kit | Still building / interrupted import | Live steps, or "didn't finish" with Delete it and import again |
-| Kit | Not enough text for a quiz | Flashcards-only notice with the exact sentence count |
-| Review | Nothing due, ended early, answer not saved | Next due time; "N cards stay due"; Try saving again |
-| Progress | No reviews; under 20 reviews | Start review; recall rate hidden with the reason |
+| Kit | Fewer than 4 cards; short notes | Test tile disabled with the reason; "simpler questions" notice |
+| Learn / Flashcards | Starred only with nothing starred; saved session with deleted cards; answer not saved | Notice with the fix; the session drops missing cards and continues; Free up space |
+| Test | Unanswered questions at Submit | "Submit with N unanswered?" with Keep answering |
+| Progress | No answers; under 20 answers | Start learning; recall rate hidden with the reason |
 | Offline | Banner | Everything works; only Install app and Check for updates are disabled |
 
 To see storage states without a private window or a full disk, add `?sim=blocked` or `?sim=full` to the URL (for example `http://localhost:5173/?sim=full#/library`).
@@ -139,21 +139,23 @@ To see storage states without a private window or a full disk, add `?sim=blocked
 - PDF layout: multi-column pages, tables and footnotes can be joined in the wrong order, because pdf.js returns text in drawing order.
 - Exact duplicate sentences aren't merged (the 50-page timing file shows this).
 - There's no card editing UI. To change a card, delete the kit and re-import, or edit a backup file.
-- The "Session done" summary lives in memory; reloading clears it (answers are saved).
-- Backups don't include the original PDFs. "Open original PDF" stops working after you remove them in Settings.
-- The kit page's due count is that kit's share of today's queue. If the daily new-card limit is used up by another kit, it can show "No cards due" even though it has unseen cards.
+- A Test in progress isn't saved; leaving the page discards it (finished tests are saved as answers).
+- No spaced repetition: Margin doesn't schedule reviews. Learn brings missed cards back within a session, and mastery shows what's left.
+- Backups don't include the original PDFs or unfinished sessions. "Open original PDF" stops working after you remove them in Settings.
 
 ## Project layout
 
 ```
 src/
-  main.tsx, app.tsx      shell: sidebar (232px ↔ 76px), routing, offline banner, storage check
+  main.tsx, app.tsx      shell: sidebar (232px ↔ 76px), top search bar, focus layout for study modes, routing
   ui.tsx, styles.css     shared components and the flat dark theme (CSS variables)
-  screens/               Today, Library, Kit, Review, Done, Progress, Settings
-  lib/db.ts              IndexedDB stores (kits, sentences, cards, reviews, confusions, files, meta), backup
+  screens/               Home, Library, Kit, Learn, Flashcards, Test, Progress, Settings
+  screens/study/         study header, source quotes, mastery bar, score ring, star button
+  study/                 pure study logic: answer checking, mastery, choices, Learn, Flashcards, Test
+  lib/db.ts              IndexedDB stores (kits, sentences, cards, reviews, confusions, files, meta, sessions), migration, backup
   lib/config.ts          build-time AI settings (VITE_AI_PROXY_URL, VITE_TURNSTILE_SITEKEY)
   lib/importer.ts        main-thread import: size/type checks, lazy pdf.js, worker, cancel, errors
-  lib/study.ts           FSRS, queues, exam extras, forecast, stats, adaptive quiz, source lookup
+  lib/study.ts           loading, recording answers, stats, exam nudge, source lookup
   gen/ai/                AI card generator with per-chunk fallback
   gen/generator.ts       TF-IDF, TextRank, cloze/MCQ, summary (the CardGenerator seam)
   gen/text.ts            tokenizer, sentence splitter, cosine similarity
