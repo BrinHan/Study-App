@@ -55,3 +55,42 @@ export async function recordConfusion(card: StudyCard, picked: string): Promise<
   return message
 }
 
+export const MODES = [
+  { id: 'learn', label: 'Learn', icon: 'learn', blurb: 'Adaptive rounds' },
+  { id: 'flashcards', label: 'Flashcards', icon: 'cards', blurb: 'Flip and sort' },
+  { id: 'test', label: 'Test', icon: 'test', blurb: 'Graded practice' },
+] as const
+export type ModeId = (typeof MODES)[number]['id']
+
+/** Focus-mode header: mode switcher, a centred progress label, options and close. */
+export function StudyHeader({ kit, mode, label, progress, onOptions, optionsOpen }: { kit: Kit; mode: ModeId; label?: ComponentChildren; progress?: number; onOptions?: () => void; optionsOpen?: boolean }) {
+  const current = MODES.find((m) => m.id === mode)!
+  return (
+    <>
+      <header class="study-header">
+        <details class="mode-switch">
+          <summary><Icon name={current.icon} size={18} /> {current.label} <span aria-hidden="true">▾</span><span class="visually-hidden">, switch study mode</span></summary>
+          <ul>
+            {MODES.map((m) => (
+              <li key={m.id}><a href={`#/${m.id}/${kit.id}`} aria-current={m.id === mode ? 'page' : undefined}><Icon name={m.icon} size={18} /> {m.label}</a></li>
+            ))}
+          </ul>
+        </details>
+        <div class="study-label">
+          <strong class="study-kit">{kit.title}</strong>
+          {label && <span class="muted small" aria-live="polite">{label}</span>}
+        </div>
+        <div class="study-actions">
+          {onOptions && <button class="btn" onClick={onOptions} aria-expanded={!!optionsOpen}>Options</button>}
+          <a class="btn icon-btn" href={`#/kit/${kit.id}`} aria-label={`Close ${current.label} and go back to the kit`}><Icon name="close" /></a>
+        </div>
+      </header>
+      {progress !== undefined && (
+        <div class="study-progress" role="progressbar" aria-label={`${current.label} progress`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress * 100)}>
+          <div style={{ width: `${Math.min(100, progress * 100)}%` }} />
+        </div>
+      )}
+    </>
+  )
+}
+
