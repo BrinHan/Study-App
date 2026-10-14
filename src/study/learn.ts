@@ -65,3 +65,15 @@ export function currentItem(s: LearnState, pool: StudyCard[]): LearnItem | null 
   return { id, format: 'written' }
 }
 
+function promote(stage: LearnStage, answer: LearnAnswer): LearnStage {
+  if (stage === 'mcq') return answer === 'mixed' ? 'written' : 'done'
+  return 'done'
+}
+
+export function answerItem(s: LearnState, correct: boolean): LearnState {
+  const id = s.roundIds[s.pos]
+  if (!id) return s
+  const stage = correct ? { ...s.stage, [id]: promote(s.stage[id], s.options.answer) } : s.stage
+  return { ...s, stage, pos: s.pos + 1, roundResults: [...s.roundResults, { id, correct }] }
+}
+
