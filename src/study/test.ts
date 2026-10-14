@@ -91,3 +91,45 @@ export function buildTest(cards: StudyCard[], pool: StudyCard[], opts: TestOptio
     .map((d, i) => ({ ...d, id: `q${i}` }) as TestQuestion)
 }
 
+const asText = (v: TestAnswers[string] | undefined) => (typeof v === 'string' ? v : '')
+
+export function gradeTest(qs: TestQuestion[], answers: TestAnswers, cards: Map<string, StudyCard>, overrides: Set<string> = new Set()) {
+  const results: QResult[] = []
+  const add = (r: QResult) => results.push(overrides.has(`${r.qid}|${r.cardId}`) ? { ...r, correct: true } : r)
+  const same = (a: string, b: string) => !!a && normalize(a) === normalize(b)
+  for (const q of qs) {
+    if (q.kind === 'match') {
+      const picks = (typeof answers[q.id] === 'object' ? answers[q.id] : {}) as Record<string, string>
+      for (const id of q.cardIds) {
+        const given = picks[id] ?? ''
+        add({ qid: q.id, cardId: id, kind: 'match', given, correct: same(given, cards.get(id)?.answer ?? '') })
+      }
+      continue
+    }
+    const card = cards.get(q.cardId)
+    const given = asText(answers[q.id])
+    if (q.kind === 'tf') add({ qid: q.id, cardId: q.cardId, kind: 'tf', given, correct: given === String(q.isTrue) })
+    else if (q.kind === 'mcq') add({ qid: q.id, cardId: q.cardId, kind: 'mcq', given, correct: same(given, card?.answer ?? '') })
+    else {
+      const r = card ? checkTyped(given, card.answer) : 'wrong'
+      add({ qid: q.id, cardId: q.cardId, kind: 'written', given, correct: r !== 'wrong', ...(r === 'close' ? { close: true } : {}) })
+    }
+  }
+  return { results, score: results.filter((r) => r.correct).length, total: results.length }
+}
+
+export function answeredCount(qs: TestQuestion[], answers: TestAnswers) {
+  let answered = 0
+  let total = 0
+  for (const q of qs) {
+    if (q.kind === 'match') {
+      const picks = (typeof answers[q.id] === 'object' ? answers[q.id] : {}) as Record<string, string>
+      total += q.cardIds.length
+      answered += q.cardIds.filter((id) => picks[id]).length
+    } else {
+      total++
+      if (asText(answers[q.id]).trim()) answered++
+    }
+  }
+  return { answered, total }
+}
