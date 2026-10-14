@@ -24,15 +24,19 @@ export async function loadStudyData(): Promise<StudyData> {
   return { kits, cards: cards.filter((c) => ready.has(c.kitId)), reviews, confusions, settings, sessions: sessions.filter((x) => ready.has(x.kitId)) }
 }
 
-export function formatInterval(ms: number) {
-  const min = ms / 60000
-  if (min < 60) return `${Math.max(1, Math.round(min))} min`
-  const h = min / 60
-  if (h < 24) return `${Math.round(h)} h`
-  const d = h / 24
-  if (d < 30) return `${Math.round(d)} d`
-  if (d < 365) return `${Math.round(d / 30)} mo`
-  return `${(d / 365).toFixed(1)} yr`
+export interface AnswerMeta { mode: StudyMode; format: AnswerFormat; picked?: string }
+
+/**
+ * Save one answer from any mode: update the card's mastery and add it to the answer log.
+ * `replaces` is the review id of an answer being overridden ("I was right"); `card` must then be the card as it was before that answer.
+ */
+export async function recordAnswer(card: StudyCard, correct: boolean, meta: AnswerMeta, replaces?: string): Promise<{ card: StudyCard; reviewId: string }> {
+  const updated = { ...card, progress: applyAnswer(card.progress, correct) }
+  const reviewId = uid()
+  await putCard(updated)
+  if (replaces) await deleteReview(replaces)
+  await addReview({ id: reviewId, cardId: card.id, kitId: card.kitId, topic: card.topic, mode: meta.mode, format: meta.format, pickedAnswer: meta.picked, correct, reviewedAt: Date.now() })
+  return { card: updated, reviewId }
 }
 
 export function nextIntervals(card: StudyCard, now = new Date()): Record<Grade, string> {
