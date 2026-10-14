@@ -1,6 +1,6 @@
 # Margin
 
-A free study app (concept build). Import your own notes as a PDF, photos of handwritten notes, or pasted text. Margin turns them into flashcards and multiple-choice questions, schedules reviews with spaced repetition (FSRS), and explains every answer by showing the exact sentence from your notes, with its page or paragraph.
+A free study app (concept build). Import your own notes as a PDF, photos of handwritten notes, or pasted text. Margin turns them into cards you can study three ways (Learn, Flashcards and Test) and explains every answer by showing the exact sentence from your notes, with its page or paragraph.
 
 No accounts and no API keys. Questions are written by AI through a small proxy; without it, or offline, Margin uses its built-in generator. The app runs in the browser and your kits are stored on the device (IndexedDB). After the first visit it works offline.
 
@@ -33,8 +33,15 @@ The import runs in a Web Worker (`src/worker.ts`) so the page stays responsive. 
 - *MCQ:* the blank is the answer. Three distractors are other key terms of the same kind (name / plural / phrase / noun) and similar length that don't appear in that sentence. Each distractor keeps a pointer to the sentence where your notes use it.
 - With fewer than 10 usable sentences, the kit gets flashcards only and the kit page says why.
 
-**6. Scheduling (FSRS).** `ts-fsrs` schedules every card. The rating buttons (Forgot / Hard / Good / Easy) show the next interval each would give. Today's queue holds due cards first, then exam extras, then new cards up to the daily limit (default 20, shared across kits). "Mastered" means the next review is 21+ days away.
-- **Exam date:** for a kit with an exam in D days, cards seen fewer than 2 times are added each day: ceil(views still needed / D). That way every card is seen at least twice before the exam.
+**6. Study modes.** Each kit page has three modes. They open full-screen with a mode switcher, and the study logic lives in `src/study/` as plain, unit-tested functions.
+- **Learn** asks cards in rounds (7 by default; 5 or 10 in Settings). In the default mode a card is asked as multiple choice, then must be typed. Settings and the Options panel also offer multiple choice only or typed only. Missed cards come back first in the next round. Cards without their own distractors get choices from the kit's other answers. If a kit has fewer than 4 different answers, Learn asks typed questions only.
+- **Typed answers** ignore case, punctuation and a leading "the/a/an". Up to 1 typo is allowed for answers of 5 characters or fewer, and 2 for longer ones. "I was right" overrides a wrong typed answer and replaces it in the answer log.
+- **Flashcards** flip with a click or Space. Sorting into Know / Still learning (keys 1 and 2, or ← and →) can be turned off, and Z undoes the last sort. Options: shuffle, start with the term, starred only. At the end of the deck you can go through the still-learning pile again.
+- **Test** builds a graded sheet of True/False, multiple-choice, matching (4–5 pairs per group) and written questions. Feedback comes only after Submit. Results show the score, the weakest topic, every answer with its source passage, and "Learn the N you missed".
+- **Mastery** is shared by all three modes. Two right answers in a row make a card *Mastered*, and a wrong answer puts it back to *Still learning*. Every answer is logged, and Progress is built from that log.
+- **Saved sessions:** unfinished Learn and Flashcards sessions are saved on the device, and Home's *Jump back in* resumes the latest one.
+- **Exam date:** the kit and Home show a countdown. From 3 days before the exam, the kit suggests a practice test.
+- Kits made before study modes keep their progress: an FSRS card reviewed 21+ days out becomes Mastered, other reviewed cards become Still learning, and the rest become Not studied.
 
 **7. Source-linked explanations.** A wrong answer opens three layers:
 1. Hint: first letter, word count, and word type.
@@ -43,9 +50,9 @@ The import runs in a Web Worker (`src/worker.ts`) so the page stays responsive. 
 
 If a card has no stored source (for example an edited backup), Margin finds the closest sentence by TF-IDF cosine similarity and labels it a closest match.
 
-**8. Mix-ups and adaptive quizzes.** If you pick the same wrong term B for answer A twice, Margin creates a "compare" card with both source sentences and lists it under *Mix-ups to fix*. Practice quizzes sample 10 MCQ cards, weighted toward topics with low accuracy and cards you've missed.
+**8. Mix-ups.** If you pick the same wrong term B for answer A twice (in Learn or Test), Margin creates a "compare" card with both source sentences and lists it under *Mix-ups to fix* on Home. Compare cards are studied in Flashcards.
 
-**Generator seam.** `src/gen/generator.ts` exports a `CardGenerator` interface. The built-in generator and the AI generator both implement it, and `src/worker.ts` picks one. Storage, review and explanations don't change.
+**Generator seam.** `src/gen/generator.ts` exports a `CardGenerator` interface. The built-in generator and the AI generator both implement it, and `src/worker.ts` picks one. Storage, the study modes and explanations don’t change.
 
 ## AI questions
 
