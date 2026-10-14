@@ -1,12 +1,8 @@
-// Scheduling (FSRS), queues, stats and source lookup. Pure functions over loaded data where possible.
-import { fsrs, State, type Grade } from 'ts-fsrs'
-import { allCards, allConfusions, allReviews, getSettings, listKits, getSentence, sentencesForKit } from './db'
-import type { Kit, StudyCard, Review, Confusion, Settings, Sentence } from './types'
+// Loading, answers, stats and source lookup. Pure functions over loaded data where possible.
+import { addReview, allCards, allConfusions, allReviews, deleteReview, getSettings, listKits, listSessions, getSentence, putCard, sentencesForKit, uid } from './db'
+import type { AnswerFormat, Kit, StudyCard, Review, Confusion, Settings, Sentence, StudyMode, StudySession } from './types'
+import { applyAnswer } from '../study/mastery'
 import { bestMatch } from '../gen/text'
-
-export const scheduler = fsrs({ enable_fuzz: true, enable_short_term: true })
-export const MASTERED_DAYS = 21
-export const RATING_LABEL: Record<Grade, string> = { 1: 'Forgot', 2: 'Hard', 3: 'Good', 4: 'Easy' }
 
 // ---- Dates (local time)
 const pad = (n: number) => String(n).padStart(2, '0')
@@ -20,13 +16,12 @@ export function parseDayKey(key: string) {
 }
 export const daysUntil = (key: string, now = new Date()) => Math.round((parseDayKey(key).getTime() - startOfDay(now).getTime()) / 86400000)
 
-// ---- Card state
-export const isMastered = (c: StudyCard) => c.fsrs.state === State.Review && c.fsrs.scheduled_days >= MASTERED_DAYS
-export type CardStatus = 'New' | 'Learning' | 'Mastered' | 'Missed twice'
-export function cardStatus(c: StudyCard, misses: number): CardStatus {
-  if (c.fsrs.state === State.New) return 'New'
-  if (isMastered(c)) return 'Mastered'
-  return misses >= 2 ? 'Missed twice' : 'Learning'
+// ---- Loading everything at once is fine at concept scale (thousands of cards).
+export interface StudyData { kits: Kit[]; cards: StudyCard[]; reviews: Review[]; confusions: Confusion[]; settings: Settings; sessions: StudySession[] }
+export async function loadStudyData(): Promise<StudyData> {
+  const [kits, cards, reviews, confusions, settings, sessions] = await Promise.all([listKits(), allCards(), allReviews(), allConfusions(), getSettings(), listSessions()])
+  const ready = new Set(kits.filter((k) => k.status === 'ready').map((k) => k.id))
+  return { kits, cards: cards.filter((c) => ready.has(c.kitId)), reviews, confusions, settings, sessions: sessions.filter((x) => ready.has(x.kitId)) }
 }
 
 export function formatInterval(ms: number) {
