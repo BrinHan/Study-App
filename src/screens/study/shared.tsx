@@ -94,3 +94,26 @@ export function StudyHeader({ kit, mode, label, progress, onOptions, optionsOpen
   )
 }
 
+export function MasteryBar({ counts, large }: { counts: { new: number; learning: number; mastered: number; total: number }; large?: boolean }) {
+  const pct = (n: number) => `${counts.total ? (n / counts.total) * 100 : 0}%`
+  return (
+    <div class={`meter${large ? ' large' : ''}`} role="img" aria-label={`${counts.mastered} mastered, ${counts.learning} still learning, ${counts.new} not studied`}>
+      <span class="m-mastered" style={{ width: pct(counts.mastered) }} />
+      <span class="m-learning" style={{ width: pct(counts.learning) }} />
+    </div>
+  )
+}
+
+export function masteryLine(c: { new: number; learning: number; mastered: number }) {
+  return `${c.mastered} mastered · ${c.learning} still learning · ${c.new} not studied`
+}
+
+export function ScoreRing({ value, label }: { value: number; label: string }) {
+  const pct = Math.round(value * 100)
+  return (
+    <div class="score-ring" style={{ '--pct': `${pct}%` }} role="img" aria-label={label}>
+      <span>{pct}%</span>
+    </div>
+  )
+}
+
