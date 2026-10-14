@@ -1,7 +1,8 @@
 // IndexedDB access. Used by the UI and by the import worker (idb works in both).
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
-import type { Kit, Sentence, StudyCard, Review, Confusion, StoredFile, Settings } from './types'
+import type { Kit, Sentence, StudyCard, Review, Confusion, StoredFile, Settings, StudySession } from './types'
 import { DEFAULT_SETTINGS } from './types'
+import { newProgress, progressFromFsrs } from '../study/mastery'
 
 interface MarginDB extends DBSchema {
   kits: { key: string; value: Kit }
@@ -10,6 +11,7 @@ interface MarginDB extends DBSchema {
   reviews: { key: string; value: Review; indexes: { kitId: string; reviewedAt: number } }
   confusions: { key: string; value: Confusion; indexes: { kitId: string } }
   files: { key: string; value: StoredFile }
+  sessions: { key: string; value: StudySession; indexes: { kitId: string } }
   meta: { key: string; value: unknown }
 }
 
