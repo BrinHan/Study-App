@@ -23,3 +23,8 @@ export function progressFromFsrs(f: LegacyFsrs): CardProgress {
   return { state: 'learning', streak: 0, ...base }
 }
 
+export function kitMastery(cards: StudyCard[]) {
+  const out = { new: 0, learning: 0, mastered: 0, total: cards.length }
+  for (const c of cards) out[c.progress.state]++
+  return out
+}
