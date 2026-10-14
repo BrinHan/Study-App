@@ -20,3 +20,50 @@ Make Margin feel familiar to Quizlet users: each kit offers **Learn**, **Flashca
 | Navigation | Keep the collapsible sidebar (Home, Library, Progress, Settings), add a top bar with kit search and Import. Study modes open full-screen with a focused header. |
 | Existing data | Migrated, not reset. |
 
+## Data model
+
+### `StudyCard`
+- Remove `fsrs` and `introducedOn`.
+- Add `progress: CardProgress` and `starred?: boolean`.
+
+```ts
+type MasteryState = 'new' | 'learning' | 'mastered'
+interface CardProgress { state: MasteryState; streak: number; seen: number; lastSeen?: number }
+```
+
+**Mastery rule (all modes share it):**
+- A correct answer adds 1 to `streak` and sets the state to `learning`. When the streak reaches 2 or more, the state becomes `mastered`.
+- A wrong answer resets the streak to 0 and sets the state to `learning`.
+- In Flashcards, "Know" counts as correct and "Still learning" counts as wrong.
+
+The per-session rule that Learn needs a typed answer is enforced inside the Learn session, not by mastery.
+
+UI labels: `new` is "Not studied", `learning` is "Still learning", `mastered` is "Mastered".
+
+### `Review` (answer log)
+- `rating` becomes optional, so old records stay valid.
+- Add `mode?: 'learn' | 'flashcards' | 'test'` and `format?: 'mcq' | 'written' | 'tf' | 'match' | 'flip'`.
+- Progress charts, weak topics and mix-ups keep reading this log.
+
+### `Settings`
+- Replace `newPerDay` with `learnAnswer: 'mixed' | 'mcq' | 'written'` (default `mixed`) and `roundSize` (default 7).
+- `newPerDay` is ignored if present.
+
+### `sessions` store (new, DB version 2)
+`StudySession { id: \`${kitId}|${mode}\`, kitId, mode: 'learn' | 'flashcards', state, updatedAt }`
+- There is one open session per kit and mode. It is deleted when the session finishes.
+- Tests are short and are not saved.
+
+### Migration (IndexedDB v1 → v2, and v1 backups)
+`progressFromFsrs(fsrs)` (pure function, no `ts-fsrs` import):
+
+| FSRS card | New progress |
+|---|---|
+| State New (0) | `new` |
+| State Review (2) with `scheduled_days >= 21` | `mastered`, streak 2 |
+| Anything else | `learning`, streak 0 |
+
+In every case `seen = reps`, `lastSeen = last_review`.
+
+Backups export `version: 2`. `parseBackup` accepts version 1 and converts its cards the same way. The `ts-fsrs` dependency is removed.
+
