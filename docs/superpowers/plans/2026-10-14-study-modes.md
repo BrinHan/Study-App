@@ -146,3 +146,111 @@
 - [ ] **Step 2–4:** Run (FAIL), implement, run (PASS).
 - [ ] **Step 5:** Commit: `Add multiple-choice option builder`.
 
+### Task 5: Learn engine
+
+**Files:**
+- Create: `src/study/learn.ts`, `src/study/learn.test.ts`
+
+**Interfaces:**
+- Consumes: `choicesFor`, `shuffled`.
+- Produces:
+```ts
+type LearnStage = 'mcq' | 'written' | 'done'
+interface LearnOptions { answer: LearnAnswer; roundSize: number; starredOnly: boolean }
+interface LearnState { kitId: string; seed: string; options: LearnOptions; order: string[]; stage: Record<string, LearnStage>;
+  round: number; roundIds: string[]; pos: number; roundResults: { id: string; correct: boolean }[] }
+interface LearnItem { id: string; format: 'mcq' | 'written'; choices?: string[] }
+startLearn(kitId: string, cards: StudyCard[], pool: StudyCard[], options: LearnOptions, seed: string): LearnState | null // null = no eligible cards
+currentItem(s: LearnState, pool: StudyCard[]): LearnItem | null   // null = round over (or finished)
+answerItem(s: LearnState, correct: boolean): LearnState            // advances pos, records result, promotes stage on correct
+nextRound(s: LearnState): LearnState                               // round+1, picks next roundIds
+isFinished(s: LearnState): boolean
+learnStats(s: LearnState): { done: number; total: number }
+pruneLearn(s: LearnState, ids: Set<string>): LearnState | null    // drop ids not in set; null if none left
+```
+- **Stage rules:**
+  - The initial stage is `mcq` for `mixed` and `mcq`, and `written` for `written`. With `mixed` or `mcq`, the stage is `written` when `choicesFor` returns null.
+  - On a correct answer: `mcq` becomes `written` in mixed mode, or `done` in mcq mode, and `written` becomes `done`.
+  - On a wrong answer the stage is unchanged.
+- **Round pick:** not-done cards in `order`. Cards whose stage differs from their initial stage, or that were missed in the previous round, come first. Take at most `roundSize`.
+- **Eligible cards:** `type !== 'compare'`, and `starred` when `starredOnly` is set.
+
+- [ ] **Step 1: Failing tests:**
+  - With 10 cards and roundSize 7, round 1 has 7 ids.
+  - Mixed: a correct mcq answer moves the card to `written`, and a correct written answer moves it to `done`.
+  - mcq option: one correct answer finishes the card.
+  - A wrong answer keeps the stage, and the card appears in the next round first.
+  - `isFinished` after all cards are done.
+  - "mixed skips mcq stage when no choices": the pool has 3 distinct answers, so the first item's format is `written`.
+  - `starredOnly` with no starred cards makes `startLearn` return null.
+  - `pruneLearn` removes missing ids and returns null when it empties.
+  - `currentItem` returns null when `pos === roundIds.length`.
+- [ ] **Step 2–4:** Run (FAIL), implement, run (PASS).
+- [ ] **Step 5:** Commit: `Add Learn session engine`.
+
+### Task 6: Flashcards engine
+
+**Files:**
+- Create: `src/study/flashcards.ts`, `src/study/flashcards.test.ts`
+
+**Interfaces:**
+```ts
+interface FlashOptions { sort: boolean; front: 'prompt' | 'answer'; starredOnly: boolean; shuffle: boolean }
+interface FlashState { kitId: string; options: FlashOptions; deck: string[]; index: number; know: string[]; learning: string[]; history: number[] }
+startFlashcards(kitId: string, cards: StudyCard[], options: FlashOptions, seed: string, only?: string[]): FlashState | null
+move(s: FlashState, delta: 1 | -1): FlashState            // clamps to [0, deck.length]; deck.length = end of deck
+sortCard(s: FlashState, pile: 'know' | 'learning'): FlashState // records current id in pile, index+1, push index to history
+undo(s: FlashState): FlashState                           // pops history, removes that id from its pile, index back
+restartWith(s: FlashState, which: 'learning' | 'all', seed: string): FlashState
+atEnd(s: FlashState): boolean
+pruneFlash(s: FlashState, ids: Set<string>): FlashState | null
+```
+- With `shuffle` on, the deck is `shuffled(ids, seed)`, otherwise card order. `only` restricts the deck (used for mix-ups). Compare cards are included.
+
+- [ ] **Step 1: Failing tests:**
+  - `sortCard` twice gives `know`/`learning` piles with the right ids and index 2.
+  - `undo` restores index 1 and removes the id.
+  - `restartWith('learning')` makes the deck equal the learning pile and empties the piles.
+  - `move(-1)` at 0 stays 0.
+  - `atEnd` is true when index equals the deck length.
+  - `starredOnly` filter.
+  - `pruneFlash`.
+- [ ] **Step 2–4:** Run (FAIL), implement, run (PASS).
+- [ ] **Step 5:** Commit: `Add Flashcards session engine`.
+
+### Task 7: Test engine
+
+**Files:**
+- Create: `src/study/test.ts`, `src/study/test.test.ts`
+
+**Interfaces:**
+```ts
+type QType = 'tf' | 'mcq' | 'match' | 'written'
+interface TestOptions { count: number; types: QType[]; starredOnly: boolean }
+type TestQuestion =
+  | { kind: 'tf'; id: string; cardId: string; statement: string; shown: string; isTrue: boolean }
+  | { kind: 'mcq'; id: string; cardId: string; choices: string[] }
+  | { kind: 'match'; id: string; cardIds: string[]; terms: string[] }  // terms shuffled
+  | { kind: 'written'; id: string; cardId: string }
+type TestAnswers = Record<string, string | Record<string, string>> // match: cardId -> term
+interface QResult { qid: string; cardId: string; kind: QType; given: string; correct: boolean; close?: boolean }
+buildTest(cards: StudyCard[], pool: StudyCard[], opts: TestOptions, seed: string): TestQuestion[]
+gradeTest(qs: TestQuestion[], answers: TestAnswers, cards: Map<string, StudyCard>, overrides?: Set<string>): { results: QResult[]; score: number; total: number }
+answeredCount(qs: TestQuestion[], answers: TestAnswers): { answered: number; total: number } // match counts per pair
+```
+- `statement` is `card.prompt` with `_____` replaced by `shown`.
+- The override key is `` `${qid}|${cardId}` ``.
+- **Distribution:** choose `min(count, eligible)` cards, shuffled. Split them across `types` in the given order with remainders going to the earliest types.
+  - Match groups have 4–5 cards with distinct normalised answers. Leftover cards that can't form a group of 4 go to the next type.
+  - mcq or tf cards with no choices fall back to written.
+- **Output order:** tf, then mcq, then match, then written.
+
+- [ ] **Step 1: Failing tests:**
+  - With 20 eligible cards, count 20 and all 4 types: total pairs/questions is 20 and every type is present.
+  - "match groups have distinct answers": include duplicate answer cards and assert no group repeats a normalised term.
+  - Roughly half of the tf statements are true. With seed 's' over 10 tf, assert both values are present.
+  - Grading: a correct mcq is correct, a "close" written answer is correct with `close: true`, a missing answer is wrong with `given: ''`, and an override flips a wrong written answer to correct.
+  - Compare cards are excluded.
+- [ ] **Step 2–4:** Run (FAIL), implement, run (PASS).
+- [ ] **Step 5:** Commit: `Add Test builder and grader`.
+
