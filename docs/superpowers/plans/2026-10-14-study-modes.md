@@ -254,3 +254,119 @@ answeredCount(qs: TestQuestion[], answers: TestAnswers): { answered: number; tot
 - [ ] **Step 2–4:** Run (FAIL), implement, run (PASS).
 - [ ] **Step 5:** Commit: `Add Test builder and grader`.
 
+### Task 8: Study data helpers (replacing the FSRS parts of `study.ts`)
+
+**Files:**
+- Modify: `src/lib/study.ts`
+
+**Interfaces:**
+- Remove: `scheduler`, `MASTERED_DAYS`, `RATING_LABEL`, `isMastered` (FSRS), `cardStatus`, `formatInterval`, `nextIntervals`, `applyRating`, `buildQueue`, `todayQueue`, `kitQueue`, `dueByKit`, `laterToday`, `forecast`, `estMinutes`, `pickQuiz`, and the `SessionResult` / `SessionSummary` / last-session code.
+- Keep: dates, `loadStudyData` (now also loads `sessions`, so `StudyData.sessions: StudySession[]`), `missesByCard`, `recall`, `topicStats`, `cite`, `resolveSource`.
+- Add:
+  - `recordAnswer(card: StudyCard, correct: boolean, meta: { mode: StudyMode; format: AnswerFormat; picked?: string }): Promise<StudyCard>`. It saves the card with `applyAnswer` and adds a `Review`.
+  - `lastActivity(d: StudyData): Map<string, number>` (kitId to the latest `reviewedAt`).
+  - `examNudge(kit: Kit): number | null`, the days left when an exam is 0 to 3 days away, else null.
+
+- [ ] **Step 1:** Implement. No new tests; this is a thin db wrapper, covered by the screen checks in Task 13.
+- [ ] **Step 2:** Commit together with Task 9, because the screens won't type-check until both are done.
+
+### Task 9: App shell, top bar, focus layout, shared study UI and CSS
+
+**Files:**
+- Modify: `src/app.tsx`, `src/ui.tsx` (icons `home`, `learn`, `cards`, `test`, `star`, `close`, `search`), `src/lib/hooks.ts` (default route `home`), `src/styles.css`
+- Create: `src/screens/study/shared.tsx`
+- Delete: `src/screens/Review.tsx`, `src/screens/Done.tsx`, `src/screens/Today.tsx`. Their `SourceQuote` and `recordConfusion` move into `shared.tsx`.
+
+**Interfaces:**
+- Produces in `shared.tsx`:
+  - `SourceQuote` (same props as before).
+  - `recordConfusion(card, picked): Promise<string | null>` (unchanged logic).
+  - `StudyHeader({ kit, mode, label, progress /* 0..1 */, onOptions? })`.
+  - `MasteryBar({ counts })`.
+  - `ScoreRing({ value /* 0..1 */, label })`.
+  - `StarButton({ card })`, which toggles `starred`, then calls `putCard` and `notifyDataChanged`.
+  - `useStudyKeys(handler)`, which ignores keys typed into inputs, textareas and selects, and keys pressed with modifiers.
+- In `app.tsx`:
+  - `NAV` is home, library, progress, settings.
+  - Routes `learn`, `flashcards` and `test` render `<div class="focus">` without the sidebar or top bar.
+  - `today` is aliased to `home`.
+  - `TopBar` is a form with a search input (`aria-label="Search your kits"`) that goes to `/library?q=` on submit, plus an Import link.
+- CSS sections, using tokens only:
+  - `.topbar`, `.focus`, `.study-header` (3-column grid with the centre label centred), `.study-col` (max-width 640px, `margin: 0 auto`);
+  - `.mode-tiles`, `.flip-card` (with `.flipped`, honouring `prefers-reduced-motion`), `.piles`;
+  - `.test-sheet`, `.match-row`, `.score-ring`, `.mastery-bar`, `.star`.
+
+- [ ] **Step 1:** Implement the shell and shared pieces. Put temporary stubs for Home, Learn, Flashcards and Test in place so the app compiles.
+- [ ] **Step 2:** Run `npx tsc --noEmit`. Expect errors only from Kit, Library, Progress and Settings, which Task 10 fixes.
+- [ ] **Step 3:** Continue to Task 10 before committing.
+
+### Task 10: Home, Kit page, Library, Progress, Settings
+
+**Files:**
+- Create: `src/screens/Home.tsx`
+- Modify: `src/screens/Kit.tsx`, `src/screens/Library.tsx`, `src/screens/Progress.tsx`, `src/screens/Settings.tsx`
+
+Behaviour is exactly as described in the spec sections "Home", "Kit page", "Library", "Progress" and "Settings".
+
+**Kit page:**
+- The Learn tile is disabled when the kit has no cloze or mcq cards.
+- The Test tile is disabled when it has fewer than 4 cloze or mcq cards.
+- The status filter uses `progress.state` and `starred`.
+
+- [ ] **Step 1:** Implement.
+- [ ] **Step 2:** Run `npx tsc --noEmit`. Expect only the stubbed mode screens left, or nothing.
+- [ ] **Step 3:** Commit Tasks 8–10: `Add Home, set-style kit page and focus layout`.
+
+### Task 11: Learn and Flashcards screens
+
+**Files:**
+- Create: `src/screens/Learn.tsx`, `src/screens/Flashcards.tsx`
+
+**Interfaces:**
+- Consumes the Task 5 and 6 engines, `recordAnswer`, `recordConfusion`, `checkTyped`, and the session db functions.
+
+**Learn:**
+- Loads the saved session through `pruneLearn`, or starts a new one. With `?cards=`, it always starts fresh with those ids and is not resumed from a saved session.
+- Saves after every answer.
+- Shows the views: question, feedback, checkpoint, finished and options.
+- On "I was right", it re-records the answer with `recordAnswer(card, true, …)` and re-applies `answerItem` as correct. To do that, keep the previous state in the feedback view.
+
+**Flashcards:**
+- Shows the views: card, end of deck and options.
+- Keys: Space or Enter flips, 1 or ← marks still learning (sort on), 2 or → marks know (sort on), ←/→ move between cards (sort off), Z undoes.
+- Undo also reverts `progress` by restoring the card snapshot kept in component memory. No new review is written.
+
+- [ ] **Step 1:** Implement Learn.
+- [ ] **Step 2:** Implement Flashcards.
+- [ ] **Step 3:** Run `npx tsc --noEmit` (clean) and `npm test` (PASS).
+- [ ] **Step 4:** Commit: `Add Learn and Flashcards modes`.
+
+### Task 12: Test screen
+
+**Files:**
+- Create: `src/screens/Test.tsx`
+
+**Behaviour:**
+- Views: setup, sheet and results. Defaults are 20 questions (capped at the number of eligible cards) and all types checked.
+- Submitting with unanswered questions shows the `Notice` confirmation "Submit with N unanswered?".
+- Results call `recordAnswer` once per result, in order, and confusion is recorded for wrong mcq answers.
+- Overrides re-grade and call `recordAnswer(card, true, …)`.
+
+- [ ] **Step 1:** Implement.
+- [ ] **Step 2:** Run `npx tsc --noEmit` and `npm test`. Expect clean and PASS.
+- [ ] **Step 3:** Commit: `Add Test mode`.
+
+### Task 13: Docs and end-to-end verification
+
+**Files:**
+- Modify: `README.md`. Replace step 6 "Scheduling (FSRS)" and step 8 with sections on study modes and mastery, and update the intro sentence about spaced repetition.
+
+- [ ] **Step 1:** Run `npm run build`. Expect success.
+- [ ] **Step 2:** Run `npm run dev` with the browser preview. Paste `samples/cell-biology.md` as a kit, then:
+  - Learn: answer one multiple-choice question right, one wrong, and one typed with a typo.
+  - Finish a round and see the checkpoint.
+  - Reload and confirm Home shows "Jump back in", then Continue resumes at the same round.
+  - Flashcards: flip, sort, undo, and reach the end of the deck.
+  - Test: 10 questions with all types, submit, override a written answer, then "Learn the N you missed".
+  - Check at 375px width that there is no horizontal scroll.
+- [ ] **Step 3:** Commit: `Update README for study modes`.
