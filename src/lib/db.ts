@@ -40,17 +40,30 @@ export function getDB(): Promise<DB> {
   if (sim === 'blocked') return Promise.reject(new StorageError('blocked', 'Storage blocked (simulated)'))
   if (!dbPromise) {
     if (typeof indexedDB === 'undefined') return Promise.reject(new StorageError('blocked', 'IndexedDB is not available'))
-    dbPromise = openDB<MarginDB>('margin', 1, {
-      upgrade(db) {
-        db.createObjectStore('kits', { keyPath: 'id' })
-        db.createObjectStore('sentences', { keyPath: 'id' }).createIndex('kitId', 'kitId')
-        db.createObjectStore('cards', { keyPath: 'id' }).createIndex('kitId', 'kitId')
-        const r = db.createObjectStore('reviews', { keyPath: 'id' })
-        r.createIndex('kitId', 'kitId')
-        r.createIndex('reviewedAt', 'reviewedAt')
-        db.createObjectStore('confusions', { keyPath: 'id' }).createIndex('kitId', 'kitId')
-        db.createObjectStore('files', { keyPath: 'kitId' })
-        db.createObjectStore('meta')
+    dbPromise = openDB<MarginDB>('margin', 2, {
+      async upgrade(db, oldVersion, _newVersion, tx) {
+        if (oldVersion < 1) {
+          db.createObjectStore('kits', { keyPath: 'id' })
+          db.createObjectStore('sentences', { keyPath: 'id' }).createIndex('kitId', 'kitId')
+          db.createObjectStore('cards', { keyPath: 'id' }).createIndex('kitId', 'kitId')
+          const r = db.createObjectStore('reviews', { keyPath: 'id' })
+          r.createIndex('kitId', 'kitId')
+          r.createIndex('reviewedAt', 'reviewedAt')
+          db.createObjectStore('confusions', { keyPath: 'id' }).createIndex('kitId', 'kitId')
+          db.createObjectStore('files', { keyPath: 'kitId' })
+          db.createObjectStore('meta')
+        }
+        if (oldVersion < 2) {
+          // v2: study modes replace FSRS. Saved sessions get a store, and each card's FSRS state becomes mastery progress.
+          db.createObjectStore('sessions', { keyPath: 'id' }).createIndex('kitId', 'kitId')
+          if (oldVersion >= 1) {
+            let cursor = await tx.objectStore('cards').openCursor()
+            while (cursor) {
+              await cursor.update(migrateCard(cursor.value))
+              cursor = await cursor.continue()
+            }
+          }
+        }
       },
     }).catch((e) => {
       dbPromise = null
