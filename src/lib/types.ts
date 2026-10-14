@@ -69,13 +69,17 @@ export interface CardProgress {
   lastSeen?: number
 }
 
+export type StudyMode = 'learn' | 'flashcards' | 'test'
+export type AnswerFormat = 'mcq' | 'written' | 'tf' | 'match' | 'flip'
 
 export interface Review {
   id: string
   cardId: string
   kitId: string
   topic: string
-  rating: 1 | 2 | 3 | 4
+  rating?: 1 | 2 | 3 | 4 // only on answers from the old FSRS review
+  mode?: StudyMode
+  format?: AnswerFormat
   pickedAnswer?: string
   correct: boolean
   reviewedAt: number
