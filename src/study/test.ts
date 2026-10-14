@@ -21,3 +21,19 @@ type Draft = TestQuestion extends infer Q ? (Q extends TestQuestion ? Omit<Q, 'i
 export const eligibleForTest = (cards: StudyCard[], starredOnly = false) =>
   cards.filter((c) => c.type !== 'compare' && (!starredOnly || c.starred))
 
+/** Split cards into matching groups of 4–5 with distinct answers; the rest are returned as leftovers. */
+function matchGroups(cards: StudyCard[]): { groups: StudyCard[][]; rest: StudyCard[] } {
+  const max = Math.floor(cards.length / 4)
+  if (!max) return { groups: [], rest: cards }
+  const cap = Math.min(5, Math.ceil(cards.length / max))
+  const groups: StudyCard[][] = Array.from({ length: max }, () => [])
+  const rest: StudyCard[] = []
+  for (const c of cards) {
+    const g = groups.find((g) => g.length < cap && !g.some((x) => normalize(x.answer) === normalize(c.answer)))
+    if (g) g.push(c)
+    else rest.push(c)
+  }
+  for (const g of groups.filter((g) => g.length < 4)) rest.push(...g)
+  return { groups: groups.filter((g) => g.length >= 4), rest }
+}
+
