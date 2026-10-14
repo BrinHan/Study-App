@@ -15,3 +15,6 @@ proxy/.env
 proxy/.env.*
 *.pem
 *.key
+
+# Brainstorm mockups
+.superpowers/
