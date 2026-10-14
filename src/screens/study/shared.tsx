@@ -117,3 +117,43 @@ export function ScoreRing({ value, label }: { value: number; label: string }) {
   )
 }
 
+export function StarButton({ card, onChange }: { card: StudyCard; onChange?: (c: StudyCard) => void }) {
+  const [busy, setBusy] = useState(false)
+  const toggle = async () => {
+    setBusy(true)
+    const next = { ...card, starred: !card.starred }
+    try {
+      await putCard(next)
+      onChange?.(next)
+      notifyDataChanged()
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <button class={`star${card.starred ? ' on' : ''}`} onClick={(e) => { e.stopPropagation(); toggle() }} disabled={busy} aria-pressed={!!card.starred} aria-label={card.starred ? 'Unstar card' : 'Star card'}>
+      <Icon name="star" size={18} />
+    </button>
+  )
+}
+
+/** Keyboard shortcuts for a study screen; ignores typing in fields and keys with modifiers. */
+export function useStudyKeys(handler: (e: KeyboardEvent) => void) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement
+      if (e.metaKey || e.ctrlKey || e.altKey || t.closest?.('input, textarea, select, summary, [contenteditable]')) return
+      handler(e)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  })
+}
+
+export function NoCards({ kit, mode, reason }: { kit: Kit; mode: string; reason: string }) {
+  return (
+    <div class="study-col">
+      <Notice tone="neutral" title={`Nothing to study in ${mode}`} actions={<a class="btn primary" href={`#/kit/${kit.id}`}>Back to {kit.title}</a>}>{reason}</Notice>
+    </div>
+  )
+}
