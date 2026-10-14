@@ -78,3 +78,75 @@ function JumpBackIn({ d }: { d: StudyData }) {
   )
 }
 
+export function Home() {
+  const { data: d, loading, error } = useAsync(loadStudyData)
+  if (loading) return <Loading label="Loading your kits…" />
+  if (error || !d) return <Notice tone="danger" title="Your kits couldn’t be loaded" actions={<button class="btn primary" onClick={() => location.reload()}>Reload</button>}>{String(error)}</Notice>
+  if (d.kits.length === 0) return <FirstLaunch />
+
+  const building = d.kits.filter((k) => k.status === 'building')
+  const activity = lastActivity(d)
+  const recent = d.kits
+    .filter((k) => k.status === 'ready')
+    .sort((a, b) => (activity.get(b.id) ?? b.createdAt) - (activity.get(a.id) ?? a.createdAt))
+    .slice(0, 6)
+  const mixups = d.confusions.filter((c) => c.count >= 2 && c.compareCardId).sort((a, b) => b.count - a.count)
+  const kitTitle = new Map(d.kits.map((k) => [k.id, k.title]))
+
+  return (
+    <div class="stack">
+      <PageHeader title="Home" />
+      {building.map((k) => (
+        <Notice key={k.id} tone="neutral" title={`Still building “${k.title}”`} actions={<a class="btn" href={getImport()?.kitId === k.id ? '#/library' : `#/kit/${k.id}`}>See progress</a>}>
+          Its cards will show up when the import finishes.
+        </Notice>
+      ))}
+      <JumpBackIn d={d} />
+
+      {recent.length > 0 && (
+        <section class="stack" aria-labelledby="recent-h">
+          <div class="section-head">
+            <h2 id="recent-h">Recent kits</h2>
+            <a class="small" href="#/library">View library</a>
+          </div>
+          <ul class="kit-grid">
+            {recent.map((k) => {
+              const cards = d.cards.filter((c) => c.kitId === k.id)
+              const counts = kitMastery(cards)
+              return (
+                <li key={k.id}>
+                  <a class="card kit-card" href={`#/kit/${k.id}`}>
+                    <strong class="kit-title">{k.title}</strong>
+                    <span class="muted small">{plural(cards.length, 'card')} · {k.sourceType === 'pdf' ? (k.transcript && !/\.pdf$/i.test(k.fileName ?? '') ? 'Photos' : 'PDF') : 'Pasted notes'}</span>
+                    <MasteryBar counts={counts} />
+                    <span class="kit-meta">
+                      <span class="small muted">{counts.total ? Math.round((counts.mastered / counts.total) * 100) : 0}% mastered</span>
+                      <ExamBadge kit={k} />
+                    </span>
+                  </a>
+                </li>
+              )
+            })}
+          </ul>
+        </section>
+      )}
+
+      <section class="card stack">
+        <h2>Mix-ups to fix</h2>
+        {mixups.length === 0 ? (
+          <p class="muted small">None yet. If you pick the same wrong term twice, Margin makes a card comparing the two and lists it here.</p>
+        ) : (
+          <ul class="rows">
+            {mixups.map((c) => (
+              <li class="row" key={c.id}>
+                <span class="row-main">You picked “{c.termB}” for “{c.termA}” {c.count}×</span>
+                <span class="muted small">{kitTitle.get(c.kitId)}</span>
+                <a class="btn small" href={`#/flashcards/${c.kitId}?cards=${encodeURIComponent(c.compareCardId!)}`}>Compare them</a>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </div>
+  )
+}
