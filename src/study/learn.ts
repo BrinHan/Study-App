@@ -88,3 +88,20 @@ export function learnStats(s: LearnState) {
   return { done: s.order.filter((id) => s.stage[id] === 'done').length, total: s.order.length }
 }
 
+/** 0–1 across the session; a card that's past multiple choice but not yet typed counts half. */
+export function learnProgress(s: LearnState): number {
+  if (!s.order.length) return 0
+  const credit = s.order.reduce((sum, id) => sum + (s.stage[id] === 'done' ? 1 : s.stage[id] !== s.initial[id] ? 0.5 : 0), 0)
+  return credit / s.order.length
+}
+
+/** Drop cards that were deleted since the session was saved; null when none are left. */
+export function pruneLearn(s: LearnState, ids: Set<string>): LearnState | null {
+  const order = s.order.filter((id) => ids.has(id))
+  if (!order.length) return null
+  if (order.length === s.order.length) return s
+  const roundResults = s.roundResults.filter((r) => ids.has(r.id))
+  const roundIds = s.roundIds.filter((id) => ids.has(id))
+  const pruned = { ...s, order, roundIds, roundResults, pos: roundResults.length }
+  return roundIds.length || isFinished(pruned) ? pruned : nextRound(pruned)
+}
