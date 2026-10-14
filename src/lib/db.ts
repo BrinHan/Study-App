@@ -128,7 +128,7 @@ export async function removeAllFiles() {
 
 export async function getSettings(): Promise<Settings> {
   const s = (await (await getDB()).get('meta', 'settings')) as Partial<Settings> | undefined
-  return { ...DEFAULT_SETTINGS, ...s }
+  return { ...DEFAULT_SETTINGS, ...pickSettings(s) }
 }
 export const saveSettings = async (s: Settings) => (await getDB()).put('meta', s, 'settings')
 
@@ -185,11 +185,15 @@ export function parseBackup(text: string): Backup {
   if (data?.app !== 'margin' || !Array.isArray(data.kits) || !Array.isArray(data.cards)) {
     throw new Error('This JSON file isn’t a Margin backup (it has no kits or cards list).')
   }
-  for (const c of data.cards) {
-    c.fsrs.due = new Date(c.fsrs.due)
-    if (c.fsrs.last_review) c.fsrs.last_review = new Date(c.fsrs.last_review)
-  }
-  return data
+  // Version 1 backups have FSRS cards and a newPerDay setting.
+  return { ...data, cards: data.cards.map(migrateCard), settings: { ...DEFAULT_SETTINGS, ...pickSettings(data.settings) } }
+}
+
+function pickSettings(s: Partial<Settings> | undefined): Partial<Settings> {
+  const out: Partial<Settings> = {}
+  if (s?.learnAnswer === 'mixed' || s?.learnAnswer === 'mcq' || s?.learnAnswer === 'written') out.learnAnswer = s.learnAnswer
+  if (typeof s?.roundSize === 'number' && s.roundSize >= 1) out.roundSize = s.roundSize
+  return out
 }
 
 export async function restoreBackup(b: Backup) {
