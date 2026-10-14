@@ -53,22 +53,6 @@ export function examNudge(kit: Pick<Kit, 'examDate'>, now = new Date()): number 
   return left >= 0 && left <= 3 ? left : null
 }
 
-/** Number of cards due on each of the next `days` days; day 0 is today's queue. */
-export function forecast(d: StudyData, days = 7): number[] {
-  const now = new Date()
-  const out = new Array(days).fill(0)
-  out[0] = todayQueue(d).length + laterToday(d, now).count
-  const base = startOfDay(now)
-  for (const c of d.cards) {
-    if (c.fsrs.state === State.New) continue
-    const i = Math.floor((startOfDay(c.fsrs.due).getTime() - base.getTime()) / 86400000)
-    if (i >= 1 && i < days) out[i]++
-  }
-  return out
-}
-
-export const estMinutes = (n: number) => Math.max(1, Math.round((n * 12) / 60))
-
 // ---- Stats
 export function missesByCard(reviews: Review[]): Map<string, number> {
   const m = new Map<string, number>()
@@ -89,24 +73,6 @@ export function topicStats(reviews: Review[]) {
   return m
 }
 
-/** Practice quiz: MCQ cards sampled with weight toward topics (and cards) with low accuracy. */
-export function pickQuiz(cards: StudyCard[], reviews: Review[], n = 10): StudyCard[] {
-  const stats = topicStats(reviews)
-  const misses = missesByCard(reviews)
-  const pool = cards.filter((c) => c.type === 'mcq').map((c) => {
-    const s = stats.get(`${c.kitId}|${c.topic}`)
-    const acc = s && s.total >= 2 ? s.correct / s.total : 0.6
-    return { c, w: 1 + 3 * (1 - acc) + Math.min(2, misses.get(c.id) ?? 0) }
-  })
-  const out: StudyCard[] = []
-  while (out.length < n && pool.length) {
-    let r = Math.random() * pool.reduce((s, p) => s + p.w, 0)
-    const i = pool.findIndex((p) => (r -= p.w) <= 0)
-    out.push(pool.splice(i < 0 ? pool.length - 1 : i, 1)[0].c)
-  }
-  return out
-}
-
 // ---- Sources
 export function cite(kit: Pick<Kit, 'sourceType' | 'fileName'> | undefined, s: Pick<Sentence, 'page' | 'paragraph'>) {
   if (kit?.sourceType === 'pdf' && s.page) return `${kit.fileName ?? 'PDF'}, page ${s.page}`
@@ -122,9 +88,3 @@ export async function resolveSource(card: StudyCard, id = card.sourceSentenceId)
   return i >= 0 ? { sentence: all[i], matched: true } : null
 }
 
-// ---- Last session, for the Session done screen
-export interface SessionResult { cardId: string; rating: Grade; correct: boolean; picked?: string; newlyMastered: boolean }
-export interface SessionSummary { mode: 'review' | 'quiz' | 'retry'; kitId?: string; results: SessionResult[]; endedEarly: boolean; notReached: number; notes: string[] }
-let lastSession: SessionSummary | null = null
-export const setLastSession = (s: SessionSummary) => { lastSession = s }
-export const getLastSession = () => lastSession
