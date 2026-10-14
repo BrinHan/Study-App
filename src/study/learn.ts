@@ -77,3 +77,14 @@ export function answerItem(s: LearnState, correct: boolean): LearnState {
   return { ...s, stage, pos: s.pos + 1, roundResults: [...s.roundResults, { id, correct }] }
 }
 
+export function nextRound(s: LearnState): LearnState {
+  const missed = s.roundResults.filter((r) => !r.correct).map((r) => r.id)
+  return { ...s, round: s.round + 1, roundIds: pickRound(s, missed), pos: 0, roundResults: [] }
+}
+
+export const isFinished = (s: LearnState) => s.order.every((id) => s.stage[id] === 'done')
+
+export function learnStats(s: LearnState) {
+  return { done: s.order.filter((id) => s.stage[id] === 'done').length, total: s.order.length }
+}
+
