@@ -101,8 +101,20 @@ export interface StoredFile {
   blob: Blob
 }
 
+export type LearnAnswer = 'mixed' | 'mcq' | 'written'
+
 export interface Settings {
-  newPerDay: number
+  learnAnswer: LearnAnswer
+  roundSize: number
 }
 
-export const DEFAULT_SETTINGS: Settings = { newPerDay: 20 }
+export const DEFAULT_SETTINGS: Settings = { learnAnswer: 'mixed', roundSize: 7 }
+
+/** An unfinished Learn or Flashcards session, saved so it can be resumed from Home. */
+export interface StudySession {
+  id: string // `${kitId}|${mode}`
+  kitId: string
+  mode: 'learn' | 'flashcards'
+  state: unknown
+  updatedAt: number
+}
