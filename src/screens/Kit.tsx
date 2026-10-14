@@ -1,12 +1,19 @@
 import { useEffect, useState } from 'preact/hooks'
 import { deleteKit, getFile, putKit, sentencesForKit } from '../lib/db'
 import { go, notifyDataChanged, useAsync } from '../lib/hooks'
-import { cardStatus, cite, formatInterval, kitQueue, loadStudyData, missesByCard, parseDayKey, type CardStatus } from '../lib/study'
-import type { Kit, Sentence } from '../lib/types'
+import { daysUntil, examNudge, loadStudyData, parseDayKey } from '../lib/study'
+import type { Kit, MasteryState, Sentence } from '../lib/types'
+import { kitMastery, STATUS_LABEL } from '../study/mastery'
 import { useImportState, ImportSteps } from './Library'
-import { Badge, Loading, Notice, PageHeader, Prompt, fmtDate, mb, plural, type Tone } from '../ui'
+import { MODES, MasteryBar, StarButton, masteryLine } from './study/shared'
+import { Badge, Icon, Loading, Notice, PageHeader, Prompt, fmtDate, mb, plural, type Tone } from '../ui'
 
-const STATUS_TONE: Record<CardStatus, Tone> = { New: 'neutral', Learning: 'accent', Mastered: 'success', 'Missed twice': 'danger' }
+const STATUS_TONE: Record<MasteryState, Tone> = { new: 'neutral', learning: 'accent', mastered: 'success' }
+type CardFilter = MasteryState | 'all' | 'starred'
+const FILTERS: { id: CardFilter; label: string }[] = [
+  { id: 'all', label: 'All' }, { id: 'new', label: STATUS_LABEL.new }, { id: 'learning', label: STATUS_LABEL.learning },
+  { id: 'mastered', label: STATUS_LABEL.mastered }, { id: 'starred', label: '★ Starred' },
+]
 
 async function load(id: string) {
   const d = await loadStudyData()
@@ -65,8 +72,8 @@ export function KitScreen({ id, query }: { id: string; query: URLSearchParams })
   const [notes, setNotes] = useState<string | null>(null)
   const [saved, setSaved] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
-  const [statusFilter, setStatusFilter] = useState<CardStatus | 'All'>('All')
-  const tab = query.get('tab') ?? 'summary'
+  const [filter, setFilter] = useState<CardFilter>('all')
+  const tab = query.get('tab') ?? 'cards'
 
   if (loading) return <Loading label="Loading kit…" />
   if (error) return <Notice tone="danger" title="This kit couldn’t be loaded" actions={<a class="btn" href="#/library">Back to Library</a>}>{String(error)}</Notice>
@@ -76,11 +83,17 @@ export function KitScreen({ id, query }: { id: string; query: URLSearchParams })
   if (kit.status === 'building') return <Building kit={kit} />
 
   const cards = d.cards.filter((c) => c.kitId === kit.id)
-  const due = kitQueue(d, kit.id).length
-  const misses = missesByCard(d.reviews.filter((r) => r.kitId === kit.id))
-  const statuses = cards.map((c) => ({ c, status: cardStatus(c, misses.get(c.id) ?? 0) }))
-  const count = (s: CardStatus) => statuses.filter((x) => x.status === s).length
-  const mcqCount = cards.filter((c) => c.type === 'mcq').length
+  const counts = kitMastery(cards)
+  const studyable = cards.filter((c) => c.type !== 'compare')
+  const count = (f: CardFilter) => (f === 'all' ? cards.length : f === 'starred' ? cards.filter((c) => c.starred).length : counts[f])
+  const shown = cards.filter((c) => filter === 'all' || (filter === 'starred' ? c.starred : c.progress.state === filter))
+  const nudge = examNudge(kit)
+  const examLeft = kit.examDate ? daysUntil(kit.examDate) : -1
+  const disabled: Record<string, string | null> = {
+    learn: studyable.length ? null : 'No cards to learn yet',
+    flashcards: cards.length ? null : 'No cards yet',
+    test: studyable.length < 4 ? 'Needs at least 4 cards' : null,
+  }
 
   const save = async (patch: Partial<Kit>, msg: string) => {
     await putKit({ ...kit, ...patch })
