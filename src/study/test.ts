@@ -47,3 +47,47 @@ function draftFor(kind: Exclude<QType, 'match'>, card: StudyCard, pool: StudyCar
   return { kind, cardId: card.id, statement: card.prompt.replace('_____', shown), shown, isTrue }
 }
 
+/**
+ * Cards per type, in `types` order: an even split with remainders to the earliest types, except that
+ * matching gets at least 4 (one group) when there are enough cards to leave one for every other type.
+ */
+function splitQuotas(n: number, types: QType[]): number[] {
+  const m = types.indexOf('match')
+  const others = types.length - 1
+  const even = (count: number, k: number) => Array.from({ length: k }, (_, i) => Math.floor(count / k) + (i < count % k ? 1 : 0))
+  if (m < 0 || Math.floor(n / types.length) >= 4 || n < 4 + others) return even(n, types.length)
+  const rest = even(n - 4, others)
+  return types.map((_, i) => (i === m ? 4 : rest[i < m ? i : i - 1]))
+}
+
+export function buildTest(cards: StudyCard[], pool: StudyCard[], opts: TestOptions, seed: string): TestQuestion[] {
+  const types = QTYPE_ORDER.filter((t) => opts.types.includes(t))
+  if (!types.length) return []
+  const chosen = shuffled(eligibleForTest(cards, opts.starredOnly), seed).slice(0, Math.max(0, opts.count))
+  const quotas = splitQuotas(chosen.length, types)
+  let next = 0
+  let carry: StudyCard[] = []
+  const drafts: Draft[] = []
+  const plain = types.find((t) => t !== 'match') as Exclude<QType, 'match'> | undefined
+
+  for (const [i, t] of types.entries()) {
+    const n = quotas[i]
+    const slice = [...carry, ...chosen.slice(next, next + n)]
+    next += n
+    carry = []
+    if (t === 'match') {
+      const { groups, rest } = matchGroups(slice)
+      for (const g of groups) drafts.push({ kind: 'match', cardIds: g.map((c) => c.id), terms: shuffled(g.map((c) => c.answer), `${seed}:${g[0].id}`) })
+      carry = rest
+    } else {
+      for (const c of slice) drafts.push(draftFor(t, c, pool, seed))
+    }
+  }
+  // Cards the last matching group couldn't take become the first other type, or written.
+  for (const c of carry) drafts.push(draftFor(plain ?? 'written', c, pool, seed))
+
+  return drafts
+    .sort((a, b) => QTYPE_ORDER.indexOf(a.kind) - QTYPE_ORDER.indexOf(b.kind))
+    .map((d, i) => ({ ...d, id: `q${i}` }) as TestQuestion)
+}
+
