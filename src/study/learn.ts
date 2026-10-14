@@ -52,3 +52,16 @@ export function startLearn(kitId: string, cards: StudyCard[], pool: StudyCard[],
   return { ...s, roundIds: pickRound(s, []) }
 }
 
+/** The question to ask now, or null when the round (or the whole session) is over. */
+export function currentItem(s: LearnState, pool: StudyCard[]): LearnItem | null {
+  const id = s.roundIds[s.pos]
+  if (!id) return null
+  const stage = s.stage[id]
+  if (stage === 'mcq') {
+    const card = pool.find((c) => c.id === id)
+    const choices = card && choicesFor(card, pool, choiceSeed(s))
+    if (choices) return { id, format: 'mcq', choices }
+  }
+  return { id, format: 'written' }
+}
+
