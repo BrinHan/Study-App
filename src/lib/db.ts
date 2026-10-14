@@ -154,10 +154,10 @@ export async function deleteEverything() {
   for (const s of ['kits', 'sentences', 'cards', 'reviews', 'confusions', 'files', 'meta', 'sessions'] as const) await db.clear(s)
 }
 
-// ---- Backup (.json). Original PDFs are left out; cards and their source sentences are kept.
+// ---- Backup (.json). Original PDFs and unfinished sessions are left out; cards and their source sentences are kept.
 export interface Backup {
   app: 'margin'
-  version: 1
+  version: 1 | 2
   exportedAt: string
   kits: Kit[]
   sentences: Sentence[]
@@ -172,7 +172,7 @@ export async function exportBackup(): Promise<Backup> {
   const [kits, sentences, cards, reviews, confusions, settings] = await Promise.all([
     db.getAll('kits'), db.getAll('sentences'), db.getAll('cards'), db.getAll('reviews'), db.getAll('confusions'), getSettings(),
   ])
-  return { app: 'margin', version: 1, exportedAt: new Date().toISOString(), kits, sentences, cards, reviews, confusions, settings }
+  return { app: 'margin', version: 2, exportedAt: new Date().toISOString(), kits, sentences, cards, reviews, confusions, settings }
 }
 
 export function parseBackup(text: string): Backup {
