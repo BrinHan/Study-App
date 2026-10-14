@@ -19,7 +19,6 @@ export function createAiGenerator(opts: { client: ProxyClient; session: Promise<
       const session = await opts.session
       if (session === null) return base // no AI: classic output and progress only
       const { chunks, leftover } = chunkSentences(base.sentences)
-      const now = new Date()
       const byShortId = new Map<string, Sentence>(base.sentences.map((s) => [shortId(s), s]))
 
       const results: (StudyCard[] | null)[] = chunks.map(() => null)
@@ -36,7 +35,7 @@ export function createAiGenerator(opts: { client: ProxyClient; session: Promise<
         if (!stop.stopped) {
           try {
             const qs = await callChunk(chunk)
-            if (qs.length) results[i] = questionsToCards(kitId, qs, byShortId, now)
+            if (qs.length) results[i] = questionsToCards(kitId, qs, byShortId)
           } catch { /* this chunk falls back to classic cards */ }
         }
         progress({ step: 'cards', text: `Writing questions with Google Gemini (${++finished} of ${chunks.length})`, done: finished, total: chunks.length })
