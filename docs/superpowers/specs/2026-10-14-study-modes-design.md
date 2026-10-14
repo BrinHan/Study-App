@@ -202,3 +202,22 @@ Backups export `version: 2`. `parseBackup` accepts version 1 and converts its ca
 - `q` filters by title.
 - The import success notice says "Start learning", which opens Learn.
 
+## Shared UI pieces
+- `src/screens/study/shared.tsx`:
+  - `SourceQuote` and `recordConfusion`, moved from `Review.tsx`;
+  - `StudyHeader`;
+  - `MasteryBar`, `ScoreRing`, `StarButton`.
+- CSS is added to `styles.css` in new sections: top bar, focus layout, mode tiles, flip card, piles, test sheet, results ring. It uses only the existing colour tokens.
+
+## Error handling
+- Save failures, including a full quota, show the existing danger notice with "Try saving again". The session stays on the current item.
+- Corrupt or old saved session state (card ids missing) is dropped silently, and a fresh session starts.
+- A kit with no eligible cards for a mode shows a notice with a link back to the kit.
+
+## Testing
+- Vitest unit tests for `answer`, `mastery` (including the FSRS migration), `options`, `learn`, `flashcards` and `test` (build distribution, matching uniqueness, grading, overrides).
+- Type-check and production build: `npm run build`.
+- Manual check in the browser preview: import the sample, then run Learn, Flashcards and Test end-to-end, at desktop and 375px width.
+
+## Out of scope
+Match game, spaced repetition, accounts and sync, Test resume, Learn audio, and an editor for card text.
