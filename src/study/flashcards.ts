@@ -27,3 +27,15 @@ export function move(s: FlashState, delta: 1 | -1): FlashState {
   return { ...s, index: Math.min(s.deck.length, Math.max(0, s.index + delta)) }
 }
 
+export function sortCard(s: FlashState, pile: Pile): FlashState {
+  const id = s.deck[s.index]
+  if (!id) return s
+  return { ...s, [pile]: [...s[pile], id], index: s.index + 1, history: [...s.history, pile] }
+}
+
+export function undo(s: FlashState): FlashState {
+  const pile = s.history.at(-1)
+  if (!pile || s.index === 0) return s
+  return { ...s, [pile]: s[pile].slice(0, -1), index: s.index - 1, history: s.history.slice(0, -1) }
+}
+
