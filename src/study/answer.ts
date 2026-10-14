@@ -23,3 +23,11 @@ export function levenshtein(a: string, b: string): number {
   return prev[b.length]
 }
 
+/** Up to 1 typo for answers of 5 characters or fewer, 2 for longer ones. */
+export function checkTyped(input: string, answer: string): TypedResult {
+  const given = normalize(input)
+  const want = normalize(answer)
+  if (!given) return 'wrong'
+  if (given === want) return 'exact'
+  return levenshtein(given, want) <= (want.length <= 5 ? 1 : 2) ? 'close' : 'wrong'
+}
