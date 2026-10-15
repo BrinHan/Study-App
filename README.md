@@ -256,20 +256,14 @@ To see storage error states without a private window or a full disk, add `?sim=b
 
 ## Known limitations
 
-- **AI questions need internet.** Offline, or without the proxy, you get the built-in questions.
-- **Very large notes are only partly covered by AI.** Notes over about 1,200 sentences get AI questions for the first part and built-in questions for the rest.
-- **Handwriting is capped at 20 pages** per import, and reading it needs internet.
-- **AI can make mistakes.** The source passage is shown with every question so you can check it. Handwriting transcripts can also be wrong.
-- **No transcript viewer yet.** The transcript is saved on the kit, but you can't see or edit it. That is planned for a later UI phase.
-- **No offline OCR.** Scanned PDFs and photos are read by AI only. Offline, a scanned PDF shows the "scanned" error.
-- **English only.** The POS tagging, stopwords and sentence splitting assume English.
-- Card quality depends on the notes. Dense, complete sentences give good cards. Bullet fragments are skipped. Some distractors are weak (for example "carbon sugar" from "five-carbon sugar"), and the generator sometimes blanks a word that's part of a longer phrase.
-- PDF layout: multi-column pages, tables and footnotes can be joined in the wrong order, because pdf.js returns text in drawing order.
-- Exact duplicate sentences aren't merged (the 50-page timing file shows this).
-- There's no card editing UI. To change a card, delete the kit and re-import, or edit a backup file.
-- A Test in progress isn't saved; leaving the page discards it (finished tests are saved as answers).
-- No spaced repetition: Margin doesn't schedule reviews. Learn brings missed cards back within a session, and mastery shows what's left.
-- Backups don't include the original PDFs or unfinished sessions. "Open original PDF" stops working after you remove them in Settings.
+- **AI needs internet.** Offline, or without the proxy, you get built-in questions. Scanned PDFs and photos can only be read with AI.
+- **Very large notes** (over about 1,200 sentences) get AI questions for the first part and built-in questions for the rest.
+- **English only.** Part-of-speech tagging, stopwords and sentence splitting assume English.
+- **Card quality depends on the notes.** Dense, complete sentences give the best cards; bullet fragments are skipped, and some distractors are weak.
+- **Complex PDF layouts** (multiple columns, tables, footnotes) can be read in the wrong order.
+- **No card editor yet.** To change a card, re-import the notes or edit a backup file.
+- **No spaced repetition.** Learn brings missed cards back within a session, and mastery shows what's left.
+- **Tests in progress aren't saved**, and backups don't include original PDFs or unfinished sessions.
 
 ## Project layout
 
