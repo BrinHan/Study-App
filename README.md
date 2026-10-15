@@ -234,6 +234,12 @@ The study engine, answer checking, mastery and migration, card generation, AI re
 
 To see storage error states without a private window or a full disk, add `?sim=blocked` or `?sim=full` to the URL, for example `http://localhost:5173/?sim=full#/library`.
 
+<details>
+<summary><b>Edge cases the app handles</b></summary>
+
+<br />
+
+| Where | State | What you see |
 |---|---|---|
 | Home | First launch | What Margin does, plus Choose a PDF or photos / Paste text |
 | Home | Nothing studied yet; kit still building | "Start learning" on the newest kit; "Still building" with a link to progress |
