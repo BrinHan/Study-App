@@ -55,6 +55,14 @@ Short rounds of seven cards. Each card starts as multiple choice and comes back 
 - At the end of the deck, go through just the *Still learning* pile again.
 - Shuffle, start with the term instead of the sentence, or study **starred** cards only.
 
+### Test
+
+<p align="center"><img src="docs/media/test.gif" alt="Test mode: setting up a test, answering true/false, multiple choice, matching and written questions, then the graded results" width="820" /></p>
+
+- Choose the length (10, 20 or all cards) and any mix of **True/False**, **Multiple choice**, **Matching** and **Written** questions.
+- There's no feedback until you submit, just like a real exam.
+- Results show your score, your weakest topic and every answer with its source passage, plus **Learn the cards you missed** in one click.
+
 
 ```bash
 npm install
