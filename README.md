@@ -116,11 +116,19 @@ Imports run in a Web Worker, so the page stays responsive. pdf.js loads only whe
 notes ─▶ text + locations ─▶ sentences ─▶ key terms (TF-IDF) ─▶ ranking (TextRank) ─▶ cards ─▶ Learn · Flashcards · Test
 ```
 
-**2. Sentences.** Paragraphs are split into sentences (abbreviations such as "e.g." and decimals are protected). Fragments, references, URLs and sentences under 6 or over 55 words are skipped.
+<details>
+<summary><b>Card generation pipeline</b></summary>
 
-**3. TF-IDF terms.** `compromise` (part-of-speech tagging, runs in the worker) extracts noun phrases such as "plasma membrane" and "electron transport chain". Each term gets `(1 + log tf) × log(1 + N / df)`, where N is the number of sentences, tf the term's total count, and df the number of sentences containing it. Multi-word phrases get ×1.3. This favours terms that recur but aren't everywhere. The top ~25% (15–150 terms) become key terms.
+<br />
 
-**4. TextRank.** Sentences are TF-IDF vectors. Cosine similarity is computed through an inverted index rather than all pairs, so it stays cheap on long documents. PageRank (damping 0.85, 30 iterations) runs over the similarity graph. High-ranking sentences that contain key terms become card sentences, and the top 4–6 (with near-duplicates skipped) form the kit summary, in reading order with page references.
+1. **Text and locations.** pdf.js extracts text lines per page. Short lines that repeat at the top or bottom of many pages (running headers, "Page 3") are dropped, and lines are joined into paragraphs. Every sentence keeps its page (PDF) or paragraph number (pasted text), plus the heading it sits under, which becomes its topic. A PDF with almost no text per page is reported as scanned.
+2. **Sentences.** Paragraphs are split into sentences, with abbreviations such as "e.g." and decimals protected. Fragments, references, URLs, and sentences under 6 or over 55 words are skipped.
+3. **TF-IDF terms.** `compromise` (part-of-speech tagging, in the worker) extracts noun phrases such as "plasma membrane". Each term scores `(1 + log tf) × log(1 + N / df)`, where N is the number of sentences, tf the term's total count and df the number of sentences containing it. Multi-word phrases get ×1.3. The top ~25% (15–150 terms) become key terms.
+4. **TextRank.** Sentences become TF-IDF vectors. Cosine similarity is computed through an inverted index rather than all pairs, so it stays cheap on long documents. PageRank (damping 0.85, 30 iterations) runs over the similarity graph. High-ranking sentences that contain key terms become cards, and the top 4–6 form the kit summary.
+5. **Cards.**
+   - *Fill-in-the-blank* cards hide a sentence's highest-scoring key term, spread across terms so one term doesn't take every card.
+   - *Multiple-choice* cards add three distractors: other key terms of the same kind and similar length that don't appear in the sentence. Each distractor keeps a pointer to where your notes use it.
+   - With fewer than 10 usable sentences, the kit gets simpler questions, and the kit page says why.
 
 **5. Cards.**
 - *Cloze:* blank out the sentence's highest-scoring key term. Answers are spread across terms, so one term doesn't take every card.
