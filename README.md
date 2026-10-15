@@ -22,6 +22,18 @@
 
 <br />
 
+## Overview
+
+Margin is a free, browser-based study app. Import a PDF, photos of handwritten notes, or pasted text, and Margin builds a **kit**: a set of fill-in-the-blank and multiple-choice cards drawn from your own material. Study a kit three ways, inspired by the tools students already know:
+
+- **Learn**: adaptive rounds that ask each card as multiple choice, then make you type it.
+- **Flashcards**: flip, sort into *Know* and *Still learning*, and repeat what you missed.
+- **Test**: a graded practice exam that mixes four question types.
+
+Every answer links back to the **sentence in your notes** it came from, with its page or paragraph. When you pick a wrong option, Margin shows where your notes use that term instead.
+
+There are no accounts and nothing to install. Kits live on your device, and after the first visit the app works offline.
+
 
 ```bash
 npm install
