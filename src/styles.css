@@ -16,6 +16,11 @@
   --warning-tint: rgba(216, 192, 138, 0.14);
   --danger-tint: rgba(217, 154, 134, 0.14);
   --accent-tint: rgba(162, 123, 92, 0.2);
+  --tag-bg: rgba(232, 230, 227, 0.08);
+  --tag-text: #D6D3CF;
+  --radius-sm: 6px;  /* badges, pills, chips */
+  --radius-md: 8px;  /* buttons, inputs, mode cards */
+  --radius-lg: 12px; /* cards and main containers */
   color-scheme: dark;
 }
 
