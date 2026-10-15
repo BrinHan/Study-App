@@ -183,21 +183,22 @@ browser ─▶ proxy (Cloudflare Worker) ─▶ Google Gemini
 
 To deploy your own proxy or run one locally, see [docs/deploy-proxy.md](docs/deploy-proxy.md).
 
-### Handwriting and scanned PDFs
+<details>
+<summary><b>Handwriting and scanned PDFs</b></summary>
 
-Photos of notes and scanned PDF pages are read by Gemini in two passes. The picker accepts photos (JPEG, PNG, WebP, and HEIC where the browser can decode it) as well as PDFs.
+<br />
+
+Photos of notes and scanned PDF pages are read by Gemini in two passes. The picker accepts JPEG, PNG and WebP photos (plus HEIC where the browser can decode it), as well as PDFs.
 
 1. **Transcribe.** Each page is sent as one image and transcribed faithfully. Anything unclear is marked instead of guessed.
-2. **Clarify.** The whole transcript is sent as text, and each mark is resolved using the rest of the document. For example, a lone "E" in a thermodynamics section becomes "E (energy of sublimation)". Low-confidence readings are kept visible as "[?]". If this pass fails, the kit is still made from the first pass.
+2. **Clarify.** The whole transcript is sent as text, and each mark is resolved using the rest of the document. For example, a lone "E" in a thermodynamics section becomes "E (energy of sublimation)". Low-confidence readings stay visible as "[?]".
 
-Details:
-- Photos and scanned pages are sent to Google Gemini. This needs internet.
-- At most 20 AI-read pages per import.
-- Images are downscaled in the browser (1600 px on the longest side, JPEG) before upload.
-- Per-IP limits are 40 requests an hour and 120 a day. When the proxy is briefly busy, the app waits and retries.
-- If a page still can't be read, the import says so ("Read 18 of 20 pages (2 couldn’t be read)") and the transcript marks the page. Import it again to add it.
+- At most 20 AI-read pages per import. Images are downscaled in the browser (1600 px on the longest side) before upload.
+- Per-IP limits are 40 requests an hour and 120 a day. The app waits and retries when the proxy is briefly busy.
+- If a page can't be read, the import says so ("Read 18 of 20 pages (2 couldn’t be read)") and the transcript marks it.
 - In a mixed PDF, only the pages with little text go to AI.
-- The full transcript is saved on the kit. There is no viewer for it yet.
+
+</details>
 
 ## Privacy
 
