@@ -219,10 +219,10 @@ a.row-main { min-height: 36px; display: inline-flex; align-items: center; }
 
 /* ---------- Kit page: study mode tiles */
 .mode-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-.mode-tile { display: flex; align-items: center; gap: 14px; min-height: 72px; padding: 14px 16px; border-radius: 10px; background: var(--bg-surface); border: 1px solid var(--border-subtle); color: var(--text-primary); text-decoration: none; }
+.mode-tile { display: flex; align-items: center; gap: 14px; min-height: 72px; padding: 14px 16px; border-radius: var(--radius-md); background: var(--bg-surface); border: 1px solid var(--border-subtle); color: var(--text-primary); text-decoration: none; }
 a.mode-tile:hover { border-color: var(--accent-primary); }
 .mode-tile.disabled { opacity: 0.55; }
-.mode-icon { display: inline-grid; place-items: center; width: 40px; height: 40px; flex: none; border-radius: 8px; background: var(--accent-tint); color: var(--accent-text); }
+.mode-icon { display: inline-grid; place-items: center; width: 40px; height: 40px; flex: none; border-radius: var(--radius-md); background: var(--accent-tint); color: var(--accent-text); }
 .mode-text { display: flex; flex-direction: column; gap: 2px; font-size: 16px; min-width: 0; }
 @media (max-width: 1100px) and (min-width: 761px) { .mode-tile { flex-direction: column; align-items: flex-start; gap: 10px; } }
 .star { display: inline-grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 6px; background: none; color: var(--text-secondary); cursor: pointer; }
