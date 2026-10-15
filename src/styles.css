@@ -347,9 +347,14 @@ select { font: inherit; font-size: 15px; color: var(--text-primary); background:
   .popover { width: min(280px, calc(100vw - 32px)); }
   h1 { font-size: 22px; }
   .topbar { margin-top: -4px; }
-  .topbar .btn.primary { padding: 0 12px; }
-  .mode-tiles { grid-template-columns: 1fr; }
-  .mode-tile { min-height: 60px; }
+  .mode-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .mode-tile { flex-direction: column; align-items: flex-start; gap: 8px; padding: 12px; }
+  .mode-text { font-size: 15px; }
+  .mode-text .small { display: none; }
+  .topbar .btn-label { display: none; }
+  .topbar .btn.primary { width: 44px; padding: 0; }
+  .tabs { overflow-x: auto; scrollbar-width: none; }
+  .tabs a { white-space: nowrap; padding: 0 10px; }
   .study-header { grid-template-columns: auto minmax(0, 1fr) auto; padding: 8px 12px; gap: 8px; }
   .study-kit { max-width: 100%; }
   .study-actions .btn:not(.icon-btn) { padding: 0 10px; }
