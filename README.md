@@ -134,14 +134,12 @@ notes ─▶ text + locations ─▶ sentences ─▶ key terms (TF-IDF) ─▶ 
 
 </details>
 
-**7. Source-linked explanations.** A wrong answer opens three layers:
-1. Hint: first letter, word count, and word type.
-2. The source passage with the answer highlighted, cited as "file.pdf, page N" or "Pasted notes, paragraph N".
-3. "Why not <your pick>?": the sentence where your notes use the term you picked.
+<details>
+<summary><b>Study engine</b></summary>
 
-If a card has no stored source (for example an edited backup), Margin finds the closest sentence by TF-IDF cosine similarity and labels it a closest match.
+<br />
 
-**8. Mix-ups.** If you pick the same wrong term B for answer A twice (in Learn or Test), Margin creates a "compare" card with both source sentences and lists it under *Mix-ups to fix* on Home. Compare cards are studied in Flashcards.
+The study logic lives in [`src/study/`](src/study) as plain, unit-tested functions. The screens only render its state.
 
 **Generator seam.** `src/gen/generator.ts` exports a `CardGenerator` interface. The built-in generator and the AI generator both implement it, and `src/worker.ts` picks one. Storage, the study modes and explanations don’t change.
 
