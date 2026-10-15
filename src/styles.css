@@ -139,6 +139,15 @@ a.row-main { min-height: 36px; display: inline-flex; align-items: center; }
 .card-row .row-main { font-weight: 500; flex-basis: 100%; }
 .card-row .answer, .card-item .answer { font-weight: 700; color: var(--accent-text); }
 
+/* Kit card list: one divided list flush with the card's own padding. */
+.card-list { list-style: none; margin: 0 -24px -22px; border-top: 1px solid var(--border-subtle); }
+.card-item { display: flex; flex-direction: column; gap: 10px; padding: 16px 24px; border-bottom: 1px solid var(--border-subtle); }
+.card-item:last-child { border-bottom: 0; }
+.card-prompt { line-height: 1.6; }
+.card-item-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; }
+.card-item-foot .row-tags { gap: 8px; }
+.card-item .star { margin: -10px -12px -10px 0; }
+
 .row-tags { display: flex; gap: 10px; align-items: center; margin-left: auto; flex-wrap: wrap; }
 .steps-list { padding-left: 20px; display: flex; flex-direction: column; gap: 8px; }
 .summary { padding-left: 22px; display: flex; flex-direction: column; gap: 12px; }
