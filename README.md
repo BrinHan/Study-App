@@ -224,9 +224,16 @@ DevTools CPU throttling barely affects Web Workers, so the third row runs genera
 
 **Bundle:** the app loads 123 KB of JS (40 KB gzipped). The worker (compromise and the generator) is 307 KB, and pdf.js (488 KB plus a 1.3 MB worker) loads only when importing a PDF. Everything is precached for offline use.
 
-## States that aren't the happy path
+## Testing
 
-| Where | State | What the user sees |
+```bash
+npm test
+```
+
+The study engine, answer checking, mastery and migration, card generation, AI response validation, importer and proxy each have unit tests. CI runs the tests and a type-checked build on every pull request and every push to `main`.
+
+To see storage error states without a private window or a full disk, add `?sim=blocked` or `?sim=full` to the URL, for example `http://localhost:5173/?sim=full#/library`.
+
 |---|---|---|
 | Home | First launch | What Margin does, plus Choose a PDF or photos / Paste text |
 | Home | Nothing studied yet; kit still building | "Start learning" on the newest kit; "Still building" with a link to progress |
