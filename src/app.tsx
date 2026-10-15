@@ -48,7 +48,7 @@ function TopBar({ query }: { query: string }) {
         <Icon name="search" size={18} />
         <input type="search" value={q} onInput={(e) => setQ((e.target as HTMLInputElement).value)} placeholder="Search your kits" aria-label="Search your kits" />
       </form>
-      <a class="btn primary" href="#/library?import=pdf"><Icon name="plus" size={18} /> Import notes</a>
+      <a class="btn primary" href="#/library?import=pdf" aria-label="Import notes"><Icon name="plus" size={18} /> <span class="btn-label">Import notes</span></a>
     </div>
   )
 }
