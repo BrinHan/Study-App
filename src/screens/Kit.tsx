@@ -228,7 +228,7 @@ export function KitScreen({ id, query }: { id: string; query: URLSearchParams })
             <div class="segmented" role="group" aria-label="Filter cards">
               {FILTERS.map((f) => (
                 <button key={f.id} class={filter === f.id ? 'on' : ''} aria-pressed={filter === f.id} onClick={() => setFilter(f.id)}>
-                  {f.label} <span class="muted">{count(f.id)}</span>
+                  {f.label} <span class="muted">({count(f.id)})</span>
                 </button>
               ))}
             </div>
