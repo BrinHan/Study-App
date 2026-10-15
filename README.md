@@ -110,9 +110,11 @@ The build is fully static and deploys anywhere. This repository publishes `main`
 
 ## How it works
 
-The import runs in a Web Worker (`src/worker.ts`) so the page stays responsive. pdf.js is loaded only when you import a PDF, and does its parsing in its own worker. The finished kit is written in a single IndexedDB transaction, so a cancelled import never leaves half a kit behind.
+Imports run in a Web Worker, so the page stays responsive. pdf.js loads only when you import a PDF and parses in its own worker. The finished kit is written in a single IndexedDB transaction, so a cancelled import never leaves half a kit behind.
 
-**1. Text and locations.** pdf.js extracts text lines per page. Short lines that repeat at the top or bottom of many pages (running headers, "Page 3") are dropped, and lines are joined into paragraphs. Every sentence keeps its page (PDF) or paragraph number (pasted text) plus the heading it sits under, which becomes its topic. A PDF with almost no text per page is reported as scanned.
+```
+notes ─▶ text + locations ─▶ sentences ─▶ key terms (TF-IDF) ─▶ ranking (TextRank) ─▶ cards ─▶ Learn · Flashcards · Test
+```
 
 **2. Sentences.** Paragraphs are split into sentences (abbreviations such as "e.g." and decimals are protected). Fragments, references, URLs and sentences under 6 or over 55 words are skipped.
 
