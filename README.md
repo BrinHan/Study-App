@@ -6,9 +6,14 @@
 
 **Turn your own notes into a study set. Learn it, flip through it, test yourself, and see the exact sentence every answer came from.**
 
-No accounts and no API keys. Questions are written by AI through a small proxy; without it, or offline, Margin uses its built-in generator. The app runs in the browser and your kits are stored on the device (IndexedDB). After the first visit it works offline.
+[![CI](https://github.com/BrinHan/Study-App/actions/workflows/ci.yml/badge.svg)](https://github.com/BrinHan/Study-App/actions/workflows/ci.yml)
+[![Deploy](https://github.com/BrinHan/Study-App/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/BrinHan/Study-App/actions/workflows/deploy-pages.yml)
+![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white)
+![Preact](https://img.shields.io/badge/Preact-11-673ab8?logo=preact&logoColor=white)
+![Offline](https://img.shields.io/badge/PWA-works%20offline-a27b5c)
 
-**Privacy.** When AI is used, your notes leave the device: the text is sent to a small proxy (a Cloudflare Worker), which forwards it to Google Gemini. Photos and scanned pages are sent the same way. Without the proxy, or when offline, everything stays on the device. See Privacy below.
+[**Live demo**](https://brinhan.github.io/Study-App/) · [Features](#features) · [Quick start](#quick-start) · [How it works](#how-it-works) · [AI questions](#ai-questions) · [Privacy](#privacy)
+
 
 ```bash
 npm install
