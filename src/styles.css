@@ -342,6 +342,9 @@ select { font: inherit; font-size: 15px; color: var(--text-primary); background:
   .bars { gap: 4px; }
   .bar-label { font-size: 11px; overflow: visible; }
   .card { padding: 18px 16px; }
+  .card-list { margin: 0 -16px -18px; }
+  .card-item { padding: 14px 16px; }
+  .popover { width: min(280px, calc(100vw - 32px)); }
   h1 { font-size: 22px; }
   .topbar { margin-top: -4px; }
   .topbar .btn.primary { padding: 0 12px; }
