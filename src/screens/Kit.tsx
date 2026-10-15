@@ -271,7 +271,7 @@ export function KitScreen({ id, query }: { id: string; query: URLSearchParams })
               <button class="btn danger-solid" onClick={async () => { await deleteKit(kit.id); notifyDataChanged(); go('/library') }}>Delete kit and {plural(cards.length, 'card')}</button>
               <button class="btn" onClick={() => setConfirmDelete(false)}>Keep kit</button>
             </>}>
-            This removes its {plural(cards.length, 'card')}, review history{file ? ' and the original PDF' : ''} from this device. It can’t be undone unless you have a backup.
+            This removes its {plural(cards.length, 'card')}, study history{file ? ' and the original PDF' : ''} from this device. It can’t be undone unless you have a backup.
           </Notice>
         )}
       </section>
