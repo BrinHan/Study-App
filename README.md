@@ -265,26 +265,26 @@ To see storage error states without a private window or a full disk, add `?sim=b
 - **No spaced repetition.** Learn brings missed cards back within a session, and mastery shows what's left.
 - **Tests in progress aren't saved**, and backups don't include original PDFs or unfinished sessions.
 
-## Project layout
+## Project structure
 
 ```
 src/
-  main.tsx, app.tsx      shell: sidebar (232px ↔ 76px), top search bar, focus layout for study modes, routing
-  ui.tsx, styles.css     shared components and the flat dark theme (CSS variables)
+  app.tsx                app shell: sidebar, search bar, routing, focus layout for study modes
   screens/               Home, Library, Kit, Learn, Flashcards, Test, Progress, Settings
   screens/study/         study header, source quotes, mastery bar, score ring, star button
-  study/                 pure study logic: answer checking, mastery, choices, Learn, Flashcards, Test
-  lib/db.ts              IndexedDB stores (kits, sentences, cards, reviews, confusions, files, meta, sessions), migration, backup
-  lib/config.ts          build-time AI settings (VITE_AI_PROXY_URL, VITE_TURNSTILE_SITEKEY)
-  lib/importer.ts        main-thread import: size/type checks, lazy pdf.js, worker, cancel, errors
-  lib/study.ts           loading, recording answers, stats, exam nudge, source lookup
-  gen/ai/                AI card generator with per-chunk fallback
-  gen/generator.ts       TF-IDF, TextRank, cloze/MCQ, summary (the CardGenerator seam)
-  gen/text.ts            tokenizer, sentence splitter, cosine similarity
-  worker.ts              runs the generator, writes the kit in one transaction
-shared/                  AI question schema, validator and scan helpers (used by app and proxy)
-proxy/                   Cloudflare Worker: Gemini proxy, rate limiter, Turnstile (see docs/deploy-proxy.md)
-docs/deploy-proxy.md     how to deploy and run the proxy
-samples/                 cell-biology.md / .pdf, plus the 50-page timing PDF
-scripts/                 dependency-free sample PDF writer
+  study/                 study engine: answers, mastery, choices, Learn, Flashcards, Test
+  lib/                   IndexedDB storage and migration, importer, study data, config
+  gen/                   built-in card generator (TF-IDF, TextRank) and AI generator
+  worker.ts              runs card generation off the main thread
+  styles.css             dark theme and design tokens
+shared/                  AI question schema and validator, shared with the proxy
+proxy/                   Cloudflare Worker: Gemini proxy, rate limiter, Turnstile
+docs/                    proxy deployment guide, design notes, README media
+samples/                 sample notes as Markdown and PDF
 ```
+
+<br />
+
+<div align="center">
+<sub>Screenshots and recordings show the built-in question generator, using the sample notes in <code>samples/</code>.</sub>
+</div>
