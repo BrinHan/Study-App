@@ -242,18 +242,17 @@ To see storage error states without a private window or a full disk, add `?sim=b
 | Where | State | What you see |
 |---|---|---|
 | Home | First launch | What Margin does, plus Choose a PDF or photos / Paste text |
-| Home | Nothing studied yet; kit still building | "Start learning" on the newest kit; "Still building" with a link to progress |
-| Any | Storage blocked (private window) | Explanation and browser-specific fix steps |
-| Library | Empty, importing (cancelable), done, no search match | Step list with Cancel import; card count, time, Start learning; Show all kits |
-| Library | Scanned PDF, > 10 MB, damaged/locked PDF, too little text, storage full | What happened, then Paste text instead / Choose another PDF / Free up space in Settings |
-| Kit | Still building / interrupted import | Live steps, or "didn't finish" with Delete it and import again |
-| Kit | Fewer than 4 cards; short notes | Test tile disabled with the reason; "simpler questions" notice |
-| Learn / Flashcards | Starred only with nothing starred; saved session with deleted cards; answer not saved | Notice with the fix; the session drops missing cards and continues; Free up space |
-| Test | Unanswered questions at Submit | "Submit with N unanswered?" with Keep answering |
-| Progress | No answers; under 20 answers | Start learning; recall rate hidden with the reason |
-| Offline | Banner | Everything works; only Install app and Check for updates are disabled |
+| Home | Nothing studied yet; kit still building | *Start learning* on the newest kit; *Still building* with a link to progress |
+| Any | Storage blocked (private window) | An explanation and browser-specific fix steps |
+| Library | Importing (cancelable), done, no search match | Step list with Cancel import; card count and time; Show all kits |
+| Library | Scanned PDF, over 10 MB, damaged or locked PDF, too little text, storage full | What happened, then Paste text instead / Choose another PDF / Free up space |
+| Kit | Still building or interrupted import | Live steps, or *didn't finish* with Delete it and import again |
+| Kit | Fewer than 4 cards; short notes | Test disabled with the reason; a *simpler questions* notice |
+| Learn, Flashcards | Starred only with nothing starred; deleted cards; answer not saved | A notice with the fix; the session continues without missing cards; Free up space |
+| Test | Unanswered questions at Submit | *Submit with N unanswered?* with Keep answering |
+| Offline | Any screen | A banner; everything works except installing and checking for updates |
 
-To see storage states without a private window or a full disk, add `?sim=blocked` or `?sim=full` to the URL (for example `http://localhost:5173/?sim=full#/library`).
+</details>
 
 ## Known limitations
 
