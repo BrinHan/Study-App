@@ -196,20 +196,11 @@ export function KitScreen({ id, query }: { id: string; query: URLSearchParams })
         </Notice>
       )}
 
-      <div class="grid-2 kit-details">
-        <label class="field">
-          <span>Exam date (optional)</span>
-          <span class="inline">
-            <input type="date" value={kit.examDate ?? ''} onChange={(e) => { const v = (e.target as HTMLInputElement).value; save({ examDate: v || undefined }, v ? `Exam date set to ${fmtDate(parseDayKey(v))}. Extra reviews start today.` : 'Exam date cleared') }} />
-            {kit.examDate && <button class="btn" onClick={() => save({ examDate: undefined }, 'Exam date cleared')}>Clear</button>}
-          </span>
-        </label>
-        <label class="field">
-          <span>Your notes about this kit</span>
-          <textarea rows={2} value={notes ?? kit.notes ?? ''} onInput={(e) => setNotes((e.target as HTMLTextAreaElement).value)}
-            onBlur={() => { if (notes !== null && notes !== (kit.notes ?? '')) save({ notes }, 'Notes saved') }} placeholder="e.g. Chapters 1–3 for the midterm" />
-        </label>
-      </div>
+      <label class="field">
+        <span>Your notes about this kit</span>
+        <textarea rows={2} value={notes ?? kit.notes ?? ''} onInput={(e) => setNotes((e.target as HTMLTextAreaElement).value)}
+          onBlur={() => { if (notes !== null && notes !== (kit.notes ?? '')) save({ notes }, 'Notes saved') }} placeholder="e.g. Chapters 1–3 for the midterm" />
+      </label>
 
       <nav class="tabs" aria-label="Kit sections">
         <a href={tabLink('cards')} aria-current={tab === 'cards' ? 'page' : undefined}>Cards ({cards.length})</a>
