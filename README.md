@@ -63,6 +63,22 @@ Short rounds of seven cards. Each card starts as multiple choice and comes back 
 - There's no feedback until you submit, just like a real exam.
 - Results show your score, your weakest topic and every answer with its source passage, plus **Learn the cards you missed** in one click.
 
+### Home and progress
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/media/home.png" alt="Home screen with Jump back in, recent kits and mix-ups to fix" /></td>
+    <td width="50%"><img src="docs/media/progress.png" alt="Progress screen with mastery, recall rate and weak topics" /></td>
+  </tr>
+  <tr>
+    <td><b>Home</b> resumes your last session, lists recent kits with their mastery, and collects <i>mix-ups</i>: pairs of terms you keep confusing, made into compare cards.</td>
+    <td><b>Progress</b> tracks mastery per kit, your recall rate over time, and the topics you get wrong most.</td>
+  </tr>
+</table>
+
+- **Shared mastery.** Every mode feeds one model per card: *Not studied*, *Still learning*, or *Mastered* (right twice in a row).
+- **Exam dates.** Set one from the kit header to get a countdown. From three days out, Margin suggests a practice test.
+
 
 ```bash
 npm install
