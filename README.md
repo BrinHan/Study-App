@@ -151,6 +151,22 @@ The study logic lives in [`src/study/`](src/study) as plain, unit-tested functio
 
 </details>
 
+<details>
+<summary><b>Source-linked explanations and mix-ups</b></summary>
+
+<br />
+
+A wrong answer shows:
+
+1. The source passage with the answer highlighted, cited as "file.pdf, page N" or "Pasted notes, paragraph N".
+2. *Why not "your pick"?*: the sentence where your notes use the term you chose.
+3. For AI-written questions, a short explanation and a reason for each wrong choice.
+
+If a card has no stored source (for example, from an edited backup), Margin finds the closest sentence by TF-IDF cosine similarity and labels it a closest match.
+
+If you pick the same wrong term B for answer A twice, Margin creates a **compare card** with both source sentences and lists it under *Mix-ups to fix* on Home.
+
+</details>
 
 ## AI questions
 
