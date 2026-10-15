@@ -109,8 +109,7 @@ textarea { resize: vertical; line-height: 1.5; }
 .tabs a[aria-current='page'] { color: var(--text-primary); border-bottom-color: var(--accent-primary); }
 
 /* ---------- Badges & notices (tints always paired with text) */
-.badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: 700; background: var(--bg-canvas); color: var(--text-secondary); white-space: nowrap; }
-.card .badge.neutral { background: var(--bg-canvas); }
+.badge { display: inline-flex; align-items: center; min-height: 24px; padding: 2px 9px; border-radius: var(--radius-sm); font-size: 12px; font-weight: 600; letter-spacing: 0.01em; background: var(--tag-bg); color: var(--tag-text); white-space: nowrap; }
 .badge.success { background: var(--success-tint); color: var(--success); }
 .badge.warning { background: var(--warning-tint); color: var(--warning); }
 .badge.danger { background: var(--danger-tint); color: var(--danger); }
