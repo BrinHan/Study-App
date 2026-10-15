@@ -42,6 +42,11 @@ Short rounds of seven cards. Each card starts as multiple choice and comes back 
 
 <p align="center"><img src="docs/media/learn.gif" alt="Learn mode: answering multiple choice, seeing the source passage for a miss, the round summary, then typing an answer with a small typo" width="820" /></p>
 
+- **Forgiving typed answers.** Case, punctuation and a leading "the/a/an" are ignored, and small typos count as right. An **I was right** button overrides a wrong typed answer.
+- **Explanations from your notes.** A wrong answer shows the source passage with the answer highlighted, plus *Why not "your pick"?* from elsewhere in your notes.
+- **Your choice of format.** Multiple choice then typed (the default), multiple choice only, or typed only, with rounds of 5, 7 or 10 cards.
+- **Pick up where you left off.** Unfinished sessions are saved, and *Jump back in* on Home resumes them.
+
 
 ```bash
 npm install
