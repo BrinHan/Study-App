@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'preact/hooks'
+import { useEffect, useRef, useState } from 'preact/hooks'
 import { deleteKit, getFile, putKit, sentencesForKit } from '../lib/db'
 import { go, notifyDataChanged, useAsync } from '../lib/hooks'
 import { daysUntil, examNudge, loadStudyData, parseDayKey } from '../lib/study'
@@ -62,6 +62,45 @@ function SourceText({ sentences, kit, at }: { sentences: Sentence[]; kit: Kit; a
         </section>
       ))}
     </div>
+  )
+}
+
+/** The exam date as a header pill; clicking it opens a small popover to set, change or clear it. */
+function ExamDate({ examDate, daysLeft, onSave }: { examDate?: string; daysLeft: number; onSave: (v: string | undefined) => void }) {
+  const [open, setOpen] = useState(false)
+  const [value, setValue] = useState(examDate ?? '')
+  const ref = useRef<HTMLSpanElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const onDown = (e: MouseEvent) => { if (!ref.current?.contains(e.target as Node)) setOpen(false) }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { setOpen(false); ref.current?.querySelector<HTMLButtonElement>('.exam-pill')?.focus() } }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey) }
+  }, [open])
+  const upcoming = !!examDate && daysLeft >= 0
+  const label = !examDate ? 'Add exam date' : `Exam ${fmtDate(parseDayKey(examDate))}${upcoming ? ` (${daysLeft === 0 ? 'today' : `in ${plural(daysLeft, 'day')}`})` : ' (passed)'}`
+  const done = (v: string | undefined) => { onSave(v); setOpen(false) }
+  return (
+    <span class="exam-date" ref={ref}>
+      <button type="button" class={`exam-pill${upcoming ? ' set' : ''}`} aria-expanded={open} aria-haspopup="dialog"
+        onClick={() => { setValue(examDate ?? ''); setOpen(!open) }}>
+        <Icon name="calendar" size={15} /> {label}
+      </button>
+      {open && (
+        <span class="popover" role="dialog" aria-label="Exam date">
+          <label class="field">
+            <span>Exam date</span>
+            <input type="date" value={value} autoFocus onInput={(e) => setValue((e.target as HTMLInputElement).value)} />
+          </label>
+          <span class="actions">
+            <button type="button" class="btn primary small" disabled={!value || value === examDate} onClick={() => done(value)}>Save</button>
+            {examDate && <button type="button" class="btn small" onClick={() => done(undefined)}>Clear date</button>}
+            <button type="button" class="btn small" onClick={() => setOpen(false)}>Cancel</button>
+          </span>
+        </span>
+      )}
+    </span>
   )
 }
 
