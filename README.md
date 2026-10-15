@@ -85,16 +85,28 @@ Short rounds of seven cards. Each card starts as multiple choice and comes back 
 
 Margin is a progressive web app. It installs to your home screen, works offline, and every screen is designed for both desktop and phone.
 
+## Quick start
+
+**Requirements:** Node.js 22 or newer.
 
 ```bash
 npm install
-npm run dev        # http://localhost:5173
-npm run build      # type-check + production build into dist/ (static, deploy anywhere)
-npm run preview    # serve dist/ with the service worker, to test offline
-npm run sample-pdf # regenerate samples/cell-biology.pdf (add -- --pages 50 for the timing file)
+```
+```bash
+npm run dev
 ```
 
-Try it with `samples/cell-biology.pdf` (3 pages) or paste `samples/cell-biology.md`.
+Open http://localhost:5173, choose **Import notes**, and paste the contents of [`samples/cell-biology.md`](samples/cell-biology.md) or import [`samples/cell-biology.pdf`](samples/cell-biology.pdf).
+
+| Command | What it does |
+|---|---|
+| `npm run dev` | Start the development server at http://localhost:5173 |
+| `npm test` | Run the unit tests (Vitest) |
+| `npm run build` | Type-check and build a static site into `dist/` |
+| `npm run preview` | Serve `dist/` with the service worker, to test offline use |
+| `npm run sample-pdf` | Regenerate `samples/cell-biology.pdf` (add `-- --pages 50` for the timing file) |
+
+The build is fully static and deploys anywhere. This repository publishes `main` to GitHub Pages on every push.
 
 ## How it works
 
