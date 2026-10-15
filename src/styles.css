@@ -183,7 +183,7 @@ a.row-main { min-height: 36px; display: inline-flex; align-items: center; }
 
 /* ---------- Questions (Learn, Test) */
 .prompt { font-size: 20px; line-height: 1.55; font-weight: 500; }
-.blank { display: inline-block; min-width: 96px; border-bottom: 2px solid var(--accent-text); margin: 0 4px; }
+.blank { display: inline-block; min-width: 4.5em; height: 1.15em; margin: 0 3px; vertical-align: -0.2em; border-radius: 4px 4px 2px 2px; background: var(--accent-tint); border-bottom: 2px solid var(--accent-primary); }
 .options { list-style: none; display: flex; flex-direction: column; gap: 8px; }
 .option { width: 100%; display: flex; align-items: center; gap: 14px; min-height: 52px; padding: 10px 14px; text-align: left; font: inherit; font-size: 16px; color: var(--text-primary); background: var(--bg-canvas); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); cursor: pointer; }
 .option:disabled { cursor: default; }
