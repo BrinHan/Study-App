@@ -325,8 +325,8 @@ a.mode-tile:hover { border-color: var(--accent-primary); }
 .match-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 220px); gap: 12px; align-items: center; padding: 10px 12px; border-radius: var(--radius-md); background: var(--bg-canvas); }
 select { font: inherit; font-size: 15px; color: var(--text-primary); background: var(--bg-surface); border: 1px solid rgba(232, 230, 227, 0.18); border-radius: var(--radius-md); padding: 0 10px; min-height: 44px; width: 100%; }
 .results-head { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
-.results-head > div { flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 8px; }
-.answer-row { display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border-radius: 6px; background: var(--bg-canvas); border-left: 3px solid var(--success); }
+.results-head > div:not(.score-ring) { flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 8px; }
+.answer-row { display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border-radius: var(--radius-md); background: var(--bg-canvas); border-left: 3px solid var(--success); }
 .answer-row.wrong { border-left-color: var(--danger); }
 .sticky-submit { position: sticky; bottom: 0; padding: 12px 0; background: var(--bg-canvas); display: flex; justify-content: space-between; align-items: center; gap: 12px; border-top: 1px solid var(--border-subtle); }
 
