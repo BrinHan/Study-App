@@ -1,6 +1,10 @@
+<div align="center">
+
+<img src="public/icon.svg" width="72" height="72" alt="Margin logo" />
+
 # Margin
 
-A free study app (concept build). Import your own notes as a PDF, photos of handwritten notes, or pasted text. Margin turns them into cards you can study three ways (Learn, Flashcards and Test) and explains every answer by showing the exact sentence from your notes, with its page or paragraph.
+**Turn your own notes into a study set. Learn it, flip through it, test yourself, and see the exact sentence every answer came from.**
 
 No accounts and no API keys. Questions are written by AI through a small proxy; without it, or offline, Margin uses its built-in generator. The app runs in the browser and your kits are stored on the device (IndexedDB). After the first visit it works offline.
 
