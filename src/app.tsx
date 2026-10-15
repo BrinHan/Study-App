@@ -48,7 +48,7 @@ function TopBar({ query }: { query: string }) {
         <Icon name="search" size={18} />
         <input type="search" value={q} onInput={(e) => setQ((e.target as HTMLInputElement).value)} placeholder="Search your kits" aria-label="Search your kits" />
       </form>
-      <a class="btn primary" href="#/library?import=pdf"><Icon name="plus" size={18} /> Import notes</a>
+      <a class="btn primary" href="#/library?import=pdf" aria-label="Import notes"><Icon name="plus" size={18} /> <span class="btn-label">Import notes</span></a>
     </div>
   )
 }
@@ -59,7 +59,7 @@ function StorageBlocked() {
   return (
     <div class="stack">
       <Notice tone="danger" title="Margin can’t save anything in this window">
-        <p>Your browser is blocking on-device storage, which Margin needs to keep your kits and review history. This usually happens in private or incognito windows, or when site data is blocked.</p>
+        <p>Your browser is blocking on-device storage, which Margin needs to keep your kits and study progress. This usually happens in private or incognito windows, or when site data is blocked.</p>
       </Notice>
       <StorageHelp />
     </div>
@@ -101,7 +101,7 @@ export function App() {
         <TopBar key={screen + (route.query.get('q') ?? '')} query={route.query.get('q') ?? ''} />
         {!online && (
           <div class="offline-banner" role="status">
-            <strong>You’re offline.</strong> Everything still works: your kits, reviews and imports run on this device. Only installing the app and checking for updates need a connection.
+            <strong>You’re offline.</strong> Everything still works: your kits, study modes and imports run on this device. Only installing the app and checking for updates need a connection.
           </div>
         )}
         {body}

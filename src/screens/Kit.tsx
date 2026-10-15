@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'preact/hooks'
+import { useEffect, useRef, useState } from 'preact/hooks'
 import { deleteKit, getFile, putKit, sentencesForKit } from '../lib/db'
 import { go, notifyDataChanged, useAsync } from '../lib/hooks'
 import { daysUntil, examNudge, loadStudyData, parseDayKey } from '../lib/study'
@@ -8,7 +8,7 @@ import { useImportState, ImportSteps } from './Library'
 import { MODES, MasteryBar, StarButton, masteryLine } from './study/shared'
 import { Badge, Icon, Loading, Notice, PageHeader, Prompt, fmtDate, mb, plural, type Tone } from '../ui'
 
-const STATUS_TONE: Record<MasteryState, Tone> = { new: 'neutral', learning: 'accent', mastered: 'success' }
+const STATUS_TONE: Record<MasteryState, Tone> = { new: 'neutral', learning: 'neutral', mastered: 'success' }
 type CardFilter = MasteryState | 'all' | 'starred'
 const FILTERS: { id: CardFilter; label: string }[] = [
   { id: 'all', label: 'All' }, { id: 'new', label: STATUS_LABEL.new }, { id: 'learning', label: STATUS_LABEL.learning },
@@ -65,6 +65,45 @@ function SourceText({ sentences, kit, at }: { sentences: Sentence[]; kit: Kit; a
   )
 }
 
+/** The exam date as a header pill; clicking it opens a small popover to set, change or clear it. */
+function ExamDate({ examDate, daysLeft, onSave }: { examDate?: string; daysLeft: number; onSave: (v: string | undefined) => void }) {
+  const [open, setOpen] = useState(false)
+  const [value, setValue] = useState(examDate ?? '')
+  const ref = useRef<HTMLSpanElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const onDown = (e: MouseEvent) => { if (!ref.current?.contains(e.target as Node)) setOpen(false) }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { setOpen(false); ref.current?.querySelector<HTMLButtonElement>('.exam-pill')?.focus() } }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey) }
+  }, [open])
+  const upcoming = !!examDate && daysLeft >= 0
+  const label = !examDate ? 'Add exam date' : `Exam ${fmtDate(parseDayKey(examDate))}${upcoming ? ` (${daysLeft === 0 ? 'today' : `in ${plural(daysLeft, 'day')}`})` : ' (passed)'}`
+  const done = (v: string | undefined) => { onSave(v); setOpen(false) }
+  return (
+    <span class="exam-date" ref={ref}>
+      <button type="button" class={`exam-pill${upcoming ? ' set' : ''}`} aria-expanded={open} aria-haspopup="dialog"
+        onClick={() => { setValue(examDate ?? ''); setOpen(!open) }}>
+        <Icon name="calendar" size={15} /> {label}
+      </button>
+      {open && (
+        <span class="popover" role="dialog" aria-label="Exam date">
+          <label class="field">
+            <span>Exam date</span>
+            <input type="date" value={value} autoFocus onInput={(e) => setValue((e.target as HTMLInputElement).value)} />
+          </label>
+          <span class="actions">
+            <button type="button" class="btn primary small" disabled={!value || value === examDate} onClick={() => done(value)}>Save</button>
+            {examDate && <button type="button" class="btn small" onClick={() => done(undefined)}>Clear date</button>}
+            <button type="button" class="btn small" onClick={() => setOpen(false)}>Cancel</button>
+          </span>
+        </span>
+      )}
+    </span>
+  )
+}
+
 export function KitScreen({ id, query }: { id: string; query: URLSearchParams }) {
   const { data, loading, error } = useAsync(() => load(id), [id])
   const [renaming, setRenaming] = useState(false)
@@ -115,11 +154,13 @@ export function KitScreen({ id, query }: { id: string; query: URLSearchParams })
       ) : (
         <PageHeader
           title={kit.title}
-          sub={<>
-            {kit.sourceType === 'pdf' ? `${kit.fileName}${kit.pageCount ? ` · ${plural(kit.pageCount, 'page')}` : ''}` : 'Pasted notes'} · {plural(cards.length, 'card')} · added {fmtDate(kit.createdAt)}
-            {examLeft >= 0 && <> · <span class="warning-text">Exam {fmtDate(parseDayKey(kit.examDate!))} ({examLeft === 0 ? 'today' : `in ${plural(examLeft, 'day')}`})</span></>}
-            {' '}<button class="link" onClick={() => { setName(kit.title); setRenaming(true) }}>Rename</button>
-          </>}
+          sub={
+            <span class="kit-meta-line">
+              <span>{kit.sourceType === 'pdf' ? `${kit.fileName}${kit.pageCount ? ` · ${plural(kit.pageCount, 'page')}` : ''}` : 'Pasted notes'} · {plural(cards.length, 'card')} · added {fmtDate(kit.createdAt)}</span>
+              <ExamDate examDate={kit.examDate} daysLeft={examLeft} onSave={(v) => save({ examDate: v }, v ? `Exam date set to ${fmtDate(parseDayKey(v))}.` : 'Exam date cleared.')} />
+              <button class="link icon-link" onClick={() => { setName(kit.title); setRenaming(true) }}><Icon name="edit" size={16} /> Rename</button>
+            </span>
+          }
         />
       )}
       {saved && <p class="muted small" role="status">{saved}</p>}
@@ -144,8 +185,8 @@ export function KitScreen({ id, query }: { id: string; query: URLSearchParams })
         </Notice>
       )}
 
-      <section class="card stack-sm" aria-label="Your progress">
-        <div class="row-line"><strong>Your progress</strong><span class="small muted">{masteryLine(counts)}</span></div>
+      <section class="card progress-card" aria-label="Your progress" title={masteryLine(counts)}>
+        <div class="row-line"><strong>Your progress</strong><span class="small strong">{counts.total ? Math.round((counts.mastered / counts.total) * 100) : 0}% mastered</span></div>
         <MasteryBar counts={counts} large />
       </section>
 
@@ -155,20 +196,11 @@ export function KitScreen({ id, query }: { id: string; query: URLSearchParams })
         </Notice>
       )}
 
-      <div class="grid-2 kit-details">
-        <label class="field">
-          <span>Exam date (optional)</span>
-          <span class="inline">
-            <input type="date" value={kit.examDate ?? ''} onChange={(e) => { const v = (e.target as HTMLInputElement).value; save({ examDate: v || undefined }, v ? `Exam date set to ${fmtDate(parseDayKey(v))}. Extra reviews start today.` : 'Exam date cleared') }} />
-            {kit.examDate && <button class="btn" onClick={() => save({ examDate: undefined }, 'Exam date cleared')}>Clear</button>}
-          </span>
-        </label>
-        <label class="field">
-          <span>Your notes about this kit</span>
-          <textarea rows={2} value={notes ?? kit.notes ?? ''} onInput={(e) => setNotes((e.target as HTMLTextAreaElement).value)}
-            onBlur={() => { if (notes !== null && notes !== (kit.notes ?? '')) save({ notes }, 'Notes saved') }} placeholder="e.g. Chapters 1–3 for the midterm" />
-        </label>
-      </div>
+      <label class="field">
+        <span>Your notes about this kit</span>
+        <textarea rows={2} value={notes ?? kit.notes ?? ''} onInput={(e) => setNotes((e.target as HTMLTextAreaElement).value)}
+          onBlur={() => { if (notes !== null && notes !== (kit.notes ?? '')) save({ notes }, 'Notes saved') }} placeholder="e.g. Chapters 1–3 for the midterm" />
+      </label>
 
       <nav class="tabs" aria-label="Kit sections">
         <a href={tabLink('cards')} aria-current={tab === 'cards' ? 'page' : undefined}>Cards ({cards.length})</a>
@@ -196,19 +228,21 @@ export function KitScreen({ id, query }: { id: string; query: URLSearchParams })
             <div class="segmented" role="group" aria-label="Filter cards">
               {FILTERS.map((f) => (
                 <button key={f.id} class={filter === f.id ? 'on' : ''} aria-pressed={filter === f.id} onClick={() => setFilter(f.id)}>
-                  {f.label} <span class="muted">{count(f.id)}</span>
+                  {f.label} <span class="muted">({count(f.id)})</span>
                 </button>
               ))}
             </div>
-            <ul class="rows">
+            <ul class="card-list">
               {shown.map((c) => (
-                <li class="row card-row" key={c.id}>
-                  <span class="row-main"><Prompt text={c.prompt} /></span>
-                  <span class="answer">{c.type === 'compare' ? c.answer : `→ ${c.answer}`}</span>
-                  <span class="row-tags">
-                    <Badge tone={STATUS_TONE[c.progress.state]}>{STATUS_LABEL[c.progress.state]}</Badge>
-                    <span class="muted small">{c.type === 'mcq' ? 'Multiple choice' : c.type === 'compare' ? 'Compare' : 'Fill in'}</span>
-                    <StarButton card={c} />
+                <li class="card-item" key={c.id}>
+                  <span class="card-prompt"><Prompt text={c.prompt} /></span>
+                  <span class="card-item-foot">
+                    <span class="answer">{c.type === 'compare' ? c.answer : `→ ${c.answer}`}</span>
+                    <span class="row-tags">
+                      <Badge tone={STATUS_TONE[c.progress.state]}>{STATUS_LABEL[c.progress.state]}</Badge>
+                      <Badge>{c.type === 'mcq' ? 'Multiple choice' : c.type === 'compare' ? 'Compare' : 'Fill in'}</Badge>
+                      <StarButton card={c} />
+                    </span>
                   </span>
                 </li>
               ))}
@@ -237,7 +271,7 @@ export function KitScreen({ id, query }: { id: string; query: URLSearchParams })
               <button class="btn danger-solid" onClick={async () => { await deleteKit(kit.id); notifyDataChanged(); go('/library') }}>Delete kit and {plural(cards.length, 'card')}</button>
               <button class="btn" onClick={() => setConfirmDelete(false)}>Keep kit</button>
             </>}>
-            This removes its {plural(cards.length, 'card')}, review history{file ? ' and the original PDF' : ''} from this device. It can’t be undone unless you have a backup.
+            This removes its {plural(cards.length, 'card')}, study history{file ? ' and the original PDF' : ''} from this device. It can’t be undone unless you have a backup.
           </Notice>
         )}
       </section>

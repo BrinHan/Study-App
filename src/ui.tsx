@@ -10,6 +10,8 @@ const PATHS: Record<string, string> = {
   close: 'M6 6l12 12M18 6 6 18',
   search: 'M10.5 4a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zM15.5 15.5 20 20',
   plus: 'M12 5v14M5 12h14',
+  calendar: 'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4',
+  edit: 'M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4',
   library: 'M5 4h4v16H5zM11 4h4v16h-4zM17 5l3 .8-3.6 14.5-3-.8',
   progress: 'M4 20V10M10 20V4M16 20v-7M22 20H2',
   settings: 'M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1',
