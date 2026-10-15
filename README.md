@@ -220,9 +220,9 @@ Measured on `samples/cell-biology-50p.pdf`: 50 pages, 170 KB, 1,113 sentences, p
 | In-app import, no throttling | 1.6 s |
 | Same pipeline on the main thread with 6× throttling | **3.2 s** to first card |
 
-DevTools CPU throttling barely affects Web Workers, which is why the first two numbers are close. The third row runs generation on the throttled main thread to get an honest 6× figure. The pdf.js parse (0.4 s there) wasn't throttled. At a full 6× it would be at most about 2.4 s, so the **worst-case estimate on a 6×-slower machine is about 5–6 s** for 50 pages. Cards are saved in one transaction, so the first card appears when the whole kit does.
+DevTools CPU throttling barely affects Web Workers, so the third row runs generation on the throttled main thread for an honest figure. The worst-case estimate on a 6×-slower machine is about **5–6 s** for 50 pages.
 
-Bundle: the app loads 108 KB of JS (36 KB gzipped). The worker (compromise + generator) is 298 KB, and pdf.js (488 KB + 1.3 MB worker) loads only when importing a PDF. Everything is precached for offline use (2.2 MB).
+**Bundle:** the app loads 123 KB of JS (40 KB gzipped). The worker (compromise and the generator) is 307 KB, and pdf.js (488 KB plus a 1.3 MB worker) loads only when importing a PDF. Everything is precached for offline use.
 
 ## States that aren't the happy path
 
