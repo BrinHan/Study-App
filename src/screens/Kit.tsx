@@ -185,8 +185,8 @@ export function KitScreen({ id, query }: { id: string; query: URLSearchParams })
         </Notice>
       )}
 
-      <section class="card stack-sm" aria-label="Your progress">
-        <div class="row-line"><strong>Your progress</strong><span class="small muted">{masteryLine(counts)}</span></div>
+      <section class="card progress-card" aria-label="Your progress" title={masteryLine(counts)}>
+        <div class="row-line"><strong>Your progress</strong><span class="small strong">{counts.total ? Math.round((counts.mastered / counts.total) * 100) : 0}% mastered</span></div>
         <MasteryBar counts={counts} large />
       </section>
 
