@@ -34,6 +34,14 @@ Every answer links back to the **sentence in your notes** it came from, with its
 
 There are no accounts and nothing to install. Kits live on your device, and after the first visit the app works offline.
 
+## Features
+
+### Learn
+
+Short rounds of seven cards. Each card starts as multiple choice and comes back as a typed answer once you know it. Cards you miss return first in the next round, and a summary after each round shows your progress through the kit.
+
+<p align="center"><img src="docs/media/learn.gif" alt="Learn mode: answering multiple choice, seeing the source passage for a miss, the round summary, then typing an answer with a small typo" width="820" /></p>
+
 
 ```bash
 npm install
