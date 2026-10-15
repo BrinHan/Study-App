@@ -141,7 +141,16 @@ notes ─▶ text + locations ─▶ sentences ─▶ key terms (TF-IDF) ─▶ 
 
 The study logic lives in [`src/study/`](src/study) as plain, unit-tested functions. The screens only render its state.
 
-**Generator seam.** `src/gen/generator.ts` exports a `CardGenerator` interface. The built-in generator and the AI generator both implement it, and `src/worker.ts` picks one. Storage, the study modes and explanations don’t change.
+- **Learn** (`learn.ts`) is a round-based state machine. Each card moves from multiple choice to typed to done, depending on the answer format, and a wrong answer keeps it at its stage for a later round. Cards without their own distractors get choices from the kit's other answers (`options.ts`). If a kit has fewer than 4 different answers, Learn asks typed questions only.
+- **Typed answers** (`answer.ts`) are normalised, then compared with Levenshtein distance: up to 1 edit for answers of 5 characters or fewer, 2 for longer ones.
+- **Flashcards** (`flashcards.ts`) tracks the deck, the two piles and an undo history.
+- **Test** (`test.ts`) splits the question count across the chosen types, guarantees at least one matching group of 4–5 distinct terms when matching is selected, and grades with overrides.
+- **Mastery** (`mastery.ts`): two right answers in a row make a card *Mastered*, and a wrong answer resets it to *Still learning*. Every answer is logged, and Progress is built from that log.
+- **Saved sessions:** unfinished Learn and Flashcards sessions are stored in IndexedDB and pruned if cards were deleted since.
+- **Migration:** kits from the earlier spaced-repetition version keep their progress. Cards scheduled 21+ days out become *Mastered*, other reviewed cards *Still learning*, and the rest *Not studied*.
+
+</details>
+
 
 ## AI questions
 
