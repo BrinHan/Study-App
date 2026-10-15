@@ -130,20 +130,9 @@ notes ─▶ text + locations ─▶ sentences ─▶ key terms (TF-IDF) ─▶ 
    - *Multiple-choice* cards add three distractors: other key terms of the same kind and similar length that don't appear in the sentence. Each distractor keeps a pointer to where your notes use it.
    - With fewer than 10 usable sentences, the kit gets simpler questions, and the kit page says why.
 
-**5. Cards.**
-- *Cloze:* blank out the sentence's highest-scoring key term. Answers are spread across terms, so one term doesn't take every card.
-- *MCQ:* the blank is the answer. Three distractors are other key terms of the same kind (name / plural / phrase / noun) and similar length that don't appear in that sentence. Each distractor keeps a pointer to the sentence where your notes use it.
-- With fewer than 10 usable sentences, the kit gets flashcards only and the kit page says why.
+`src/gen/generator.ts` exports a `CardGenerator` interface. The built-in generator and the AI generator both implement it, and `src/worker.ts` picks one. Storage, study modes and explanations don't change.
 
-**6. Study modes.** Each kit page has three modes. They open full-screen with a mode switcher, and the study logic lives in `src/study/` as plain, unit-tested functions.
-- **Learn** asks cards in rounds (7 by default; 5 or 10 in Settings). In the default mode a card is asked as multiple choice, then must be typed. Settings and the Options panel also offer multiple choice only or typed only. Missed cards come back first in the next round. Cards without their own distractors get choices from the kit's other answers. If a kit has fewer than 4 different answers, Learn asks typed questions only.
-- **Typed answers** ignore case, punctuation and a leading "the/a/an". Up to 1 typo is allowed for answers of 5 characters or fewer, and 2 for longer ones. "I was right" overrides a wrong typed answer and replaces it in the answer log.
-- **Flashcards** flip with a click or Space. Sorting into Know / Still learning (keys 1 and 2, or ← and →) can be turned off, and Z undoes the last sort. Options: shuffle, start with the term, starred only. At the end of the deck you can go through the still-learning pile again.
-- **Test** builds a graded sheet of True/False, multiple-choice, matching (4–5 pairs per group) and written questions. Feedback comes only after Submit. Results show the score, the weakest topic, every answer with its source passage, and "Learn the N you missed".
-- **Mastery** is shared by all three modes. Two right answers in a row make a card *Mastered*, and a wrong answer puts it back to *Still learning*. Every answer is logged, and Progress is built from that log.
-- **Saved sessions:** unfinished Learn and Flashcards sessions are saved on the device, and Home's *Jump back in* resumes the latest one.
-- **Exam date:** the kit and Home show a countdown. From 3 days before the exam, the kit suggests a practice test.
-- Kits made before study modes keep their progress: an FSRS card reviewed 21+ days out becomes Mastered, other reviewed cards become Still learning, and the rest become Not studied.
+</details>
 
 **7. Source-linked explanations.** A wrong answer opens three layers:
 1. Hint: first letter, word count, and word type.
