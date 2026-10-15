@@ -8,7 +8,7 @@ import { useImportState, ImportSteps } from './Library'
 import { MODES, MasteryBar, StarButton, masteryLine } from './study/shared'
 import { Badge, Icon, Loading, Notice, PageHeader, Prompt, fmtDate, mb, plural, type Tone } from '../ui'
 
-const STATUS_TONE: Record<MasteryState, Tone> = { new: 'neutral', learning: 'accent', mastered: 'success' }
+const STATUS_TONE: Record<MasteryState, Tone> = { new: 'neutral', learning: 'neutral', mastered: 'success' }
 type CardFilter = MasteryState | 'all' | 'starred'
 const FILTERS: { id: CardFilter; label: string }[] = [
   { id: 'all', label: 'All' }, { id: 'new', label: STATUS_LABEL.new }, { id: 'learning', label: STATUS_LABEL.learning },
