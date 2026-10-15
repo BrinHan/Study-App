@@ -210,15 +210,15 @@ Photos of notes and scanned PDF pages are read by Gemini in two passes. The pick
 | **Proxy logs** | No notes, request bodies or raw IP addresses. Logs hold error codes and timings only. IPs are stored as a salted hash, for rate limiting. |
 | **Keys** | The Gemini key exists only as a Worker secret. It is never in the app or in git. |
 
-## Performance (measured)
+## Performance
 
-Test file: `samples/cell-biology-50p.pdf`, 50 pages, 170 KB. It's the sample notes repeated with numbered sections: 1,113 sentences, which yield 394 cards (the 400-card cap).
+Measured on `samples/cell-biology-50p.pdf`: 50 pages, 170 KB, 1,113 sentences, producing 394 cards (the 400-card cap).
 
 | Run | Time to cards |
 |---|---|
 | In-app import, Chrome, DevTools CPU throttling 6× | **1.9 s** |
 | In-app import, no throttling | 1.6 s |
-| Same pipeline run on the main thread with 6× throttling (pdf.js read 0.4 s + generation 2.9 s) | **3.2 s to first card** |
+| Same pipeline on the main thread with 6× throttling | **3.2 s** to first card |
 
 DevTools CPU throttling barely affects Web Workers, which is why the first two numbers are close. The third row runs generation on the throttled main thread to get an honest 6× figure. The pdf.js parse (0.4 s there) wasn't throttled. At a full 6× it would be at most about 2.4 s, so the **worst-case estimate on a 6×-slower machine is about 5–6 s** for 50 pages. Cards are saved in one transaction, so the first card appears when the whole kit does.
 
