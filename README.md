@@ -202,11 +202,13 @@ Photos of notes and scanned PDF pages are read by Gemini in two passes. The pick
 
 ## Privacy
 
-- **With AI on:** the text of your notes (or the photos and scanned pages) is sent to the proxy and on to Google Gemini. Google's free-tier terms apply to that data. On Gemini's free tier, Google may use submitted content to improve its products. Don't import anything you wouldn't send to a third party.
-- **What the proxy keeps:** it doesn't log notes, request bodies or raw IP addresses. Logs hold error codes and timings only. IPs are stored only as a salted hash, for rate limiting (IPv6 addresses by their /64 prefix).
-- **What stays local:** your kits, cards, reviews and progress live in IndexedDB on your device. They are never uploaded.
-- **With AI off:** if the proxy isn't configured, or you're offline, nothing leaves the device.
-- **Keys:** the Gemini key exists only as a Worker secret. It is never in the app or in git.
+| | |
+|---|---|
+| **Stored locally** | Kits, cards, answers and progress live in IndexedDB on your device. They are never uploaded. |
+| **With AI off** | If the proxy isn't configured, or you're offline, nothing leaves the device. |
+| **With AI on** | The text of your notes (or the photos and scanned pages) is sent to the proxy and on to Google Gemini, and Google's free-tier terms apply. Google may use submitted content to improve its products, so don't import anything you wouldn't send to a third party. |
+| **Proxy logs** | No notes, request bodies or raw IP addresses. Logs hold error codes and timings only. IPs are stored as a salted hash, for rate limiting. |
+| **Keys** | The Gemini key exists only as a Worker secret. It is never in the app or in git. |
 
 ## Performance (measured)
 
