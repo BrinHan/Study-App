@@ -134,10 +134,11 @@ textarea { resize: vertical; line-height: 1.5; }
 .row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; background: var(--bg-canvas); border-radius: var(--radius-md); padding: 10px 14px; min-height: 56px; }
 .row-main { flex: 1; min-width: 160px; color: var(--text-primary); font-weight: 600; text-decoration: none; }
 a.row-main { min-height: 36px; display: inline-flex; align-items: center; }
-.row-line { display: flex; justify-content: space-between; gap: 12px; }
+.row-line { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
 .row-line a { color: var(--text-primary); font-weight: 600; text-decoration: none; }
 .card-row .row-main { font-weight: 500; flex-basis: 100%; }
-.card-row .answer { font-weight: 700; color: var(--accent-text); }
+.card-row .answer, .card-item .answer { font-weight: 700; color: var(--accent-text); }
+
 .row-tags { display: flex; gap: 10px; align-items: center; margin-left: auto; flex-wrap: wrap; }
 .steps-list { padding-left: 20px; display: flex; flex-direction: column; gap: 8px; }
 .summary { padding-left: 22px; display: flex; flex-direction: column; gap: 12px; }
