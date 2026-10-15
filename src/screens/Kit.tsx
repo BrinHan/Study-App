@@ -154,11 +154,13 @@ export function KitScreen({ id, query }: { id: string; query: URLSearchParams })
       ) : (
         <PageHeader
           title={kit.title}
-          sub={<>
-            {kit.sourceType === 'pdf' ? `${kit.fileName}${kit.pageCount ? ` · ${plural(kit.pageCount, 'page')}` : ''}` : 'Pasted notes'} · {plural(cards.length, 'card')} · added {fmtDate(kit.createdAt)}
-            {examLeft >= 0 && <> · <span class="warning-text">Exam {fmtDate(parseDayKey(kit.examDate!))} ({examLeft === 0 ? 'today' : `in ${plural(examLeft, 'day')}`})</span></>}
-            {' '}<button class="link" onClick={() => { setName(kit.title); setRenaming(true) }}>Rename</button>
-          </>}
+          sub={
+            <span class="kit-meta-line">
+              <span>{kit.sourceType === 'pdf' ? `${kit.fileName}${kit.pageCount ? ` · ${plural(kit.pageCount, 'page')}` : ''}` : 'Pasted notes'} · {plural(cards.length, 'card')} · added {fmtDate(kit.createdAt)}</span>
+              <ExamDate examDate={kit.examDate} daysLeft={examLeft} onSave={(v) => save({ examDate: v }, v ? `Exam date set to ${fmtDate(parseDayKey(v))}.` : 'Exam date cleared.')} />
+              <button class="link icon-link" onClick={() => { setName(kit.title); setRenaming(true) }}><Icon name="edit" size={16} /> Rename</button>
+            </span>
+          }
         />
       )}
       {saved && <p class="muted small" role="status">{saved}</p>}
