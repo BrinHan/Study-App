@@ -14,6 +14,14 @@
 
 [**Live demo**](https://brinhan.github.io/Study-App/) · [Features](#features) · [Quick start](#quick-start) · [How it works](#how-it-works) · [AI questions](#ai-questions) · [Privacy](#privacy)
 
+<br />
+
+<img src="docs/media/kit.png" alt="A Margin kit page with Learn, Flashcards and Test modes, a mastery bar and the card list" width="900" />
+
+</div>
+
+<br />
+
 
 ```bash
 npm install
