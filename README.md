@@ -47,6 +47,14 @@ Short rounds of seven cards. Each card starts as multiple choice and comes back 
 - **Your choice of format.** Multiple choice then typed (the default), multiple choice only, or typed only, with rounds of 5, 7 or 10 cards.
 - **Pick up where you left off.** Unfinished sessions are saved, and *Jump back in* on Home resumes them.
 
+### Flashcards
+
+<p align="center"><img src="docs/media/flashcards.gif" alt="Flashcards mode: flipping a card and sorting cards into Know and Still learning" width="820" /></p>
+
+- Flip with a click or <kbd>Space</kbd>. Sort with <kbd>1</kbd>/<kbd>2</kbd> or <kbd>←</kbd>/<kbd>→</kbd>, and undo with <kbd>Z</kbd>.
+- At the end of the deck, go through just the *Still learning* pile again.
+- Shuffle, start with the term instead of the sentence, or study **starred** cards only.
+
 
 ```bash
 npm install
