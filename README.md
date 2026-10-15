@@ -170,19 +170,18 @@ If you pick the same wrong term B for answer A twice, Margin creates a **compare
 
 ## AI questions
 
-When the proxy is configured and the browser is online, Margin asks AI to write the questions. Otherwise it uses the built-in generator described above.
+AI is optional. When the proxy is configured and the browser is online, Margin asks AI to write the questions. Otherwise it uses the built-in generator above, with no delay.
 
 ```
-browser  ->  proxy (Cloudflare Worker)  ->  Google Gemini
+browser ─▶ proxy (Cloudflare Worker) ─▶ Google Gemini
 ```
 
-- **Proxy.** `proxy/` is a Worker with the routes `/session`, `/generate`, `/transcribe` and `/clarify`. It keeps the Gemini key as a secret. It checks the origin, requires a Turnstile-verified session token bound to the IP, and applies per-IP and global rate limits in a Durable Object. Generated questions are cached for a week (on a custom domain only).
-- **Shared code.** `shared/` holds the question schema and validator used by both sides. Nothing the model returns is trusted until it passes the validator. AI text is shown as plain text.
-- **Configuration.** The app reads `VITE_AI_PROXY_URL` and `VITE_TURNSTILE_SITEKEY` at build time. If either is unset, the app behaves as it did before and adds no delay.
-- **Fallback.** Notes are sent in chunks. If a chunk fails, only that chunk falls back to built-in questions. A kill switch (`ENABLED=false`) turns the proxy off for everyone.
-- **Explanations.** AI questions show the source passage from your notes, plus a short explanation and a reason for each wrong choice.
+- **Proxy.** [`proxy/`](proxy) is a Worker with the routes `/session`, `/generate`, `/transcribe` and `/clarify`. It holds the Gemini key as a secret, checks the origin, requires a Turnstile-verified session token bound to the IP, and applies per-IP and global rate limits in a Durable Object.
+- **Validation.** [`shared/`](shared) holds the question schema and validator used by both sides. Nothing the model returns is trusted until it passes, and AI text is rendered as plain text.
+- **Configuration.** The app reads `VITE_AI_PROXY_URL` and `VITE_TURNSTILE_SITEKEY` at build time.
+- **Graceful fallback.** Notes are sent in chunks, and a failed chunk falls back to built-in questions on its own. A kill switch (`ENABLED=false`) turns the proxy off for everyone.
 
-To deploy your own proxy, or to run it locally, see [docs/deploy-proxy.md](docs/deploy-proxy.md).
+To deploy your own proxy or run one locally, see [docs/deploy-proxy.md](docs/deploy-proxy.md).
 
 ### Handwriting and scanned PDFs
 
