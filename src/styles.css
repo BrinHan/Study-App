@@ -148,6 +148,17 @@ a.row-main { min-height: 36px; display: inline-flex; align-items: center; }
 .card-item-foot .row-tags { gap: 8px; }
 .card-item .star { margin: -10px -12px -10px 0; }
 
+/* Kit header: meta line, exam date pill and popover. */
+.kit-meta-line { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 4px 12px; }
+.icon-link { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; padding: 0; min-height: 32px; }
+.icon-link:hover { text-decoration: underline; }
+.exam-date { position: relative; display: inline-flex; }
+.exam-pill { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 10px; border-radius: var(--radius-sm); border: 1px dashed rgba(232, 230, 227, 0.22); background: none; color: var(--text-secondary); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+.exam-pill:hover { color: var(--text-primary); border-color: rgba(232, 230, 227, 0.4); }
+.exam-pill.set { border: 1px solid rgba(216, 192, 138, 0.35); background: var(--warning-tint); color: var(--warning); }
+.popover { position: absolute; top: calc(100% + 8px); left: 0; z-index: 5; display: flex; flex-direction: column; gap: 12px; width: 280px; padding: 16px; border-radius: var(--radius-lg); background: var(--bg-surface); border: 1px solid rgba(232, 230, 227, 0.16); box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45); color: var(--text-primary); }
+.popover input[type='date'] { width: 100%; background: var(--bg-canvas); }
+.progress-card { display: flex; flex-direction: column; gap: 12px; }
 .row-tags { display: flex; gap: 10px; align-items: center; margin-left: auto; flex-wrap: wrap; }
 .steps-list { padding-left: 20px; display: flex; flex-direction: column; gap: 8px; }
 .summary { padding-left: 22px; display: flex; flex-direction: column; gap: 12px; }
