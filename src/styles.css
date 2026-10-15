@@ -248,7 +248,7 @@ a.mode-tile:hover { border-color: var(--accent-primary); }
 .study-col { width: 100%; max-width: 640px; margin: 0 auto; padding: 28px 20px 64px; display: flex; flex-direction: column; gap: 18px; }
 .study-col.wide { max-width: 760px; }
 .study-meta { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-.feedback { display: flex; flex-direction: column; gap: 12px; padding: 16px 18px; border-radius: 10px; background: var(--bg-surface); border: 1px solid var(--border-subtle); }
+.feedback { display: flex; flex-direction: column; gap: 12px; padding: 16px 18px; border-radius: var(--radius-lg); background: var(--bg-surface); border: 1px solid var(--border-subtle); }
 .feedback.good { border-color: rgba(169, 184, 154, 0.45); }
 .feedback.bad { border-color: rgba(217, 154, 134, 0.45); }
 .feedback-title { font-weight: 700; }
@@ -277,7 +277,7 @@ a.mode-tile:hover { border-color: var(--accent-primary); }
 .pile.learning { background: var(--danger-tint); color: var(--danger); }
 .pile.know { background: var(--success-tint); color: var(--success); }
 .flip-wrap { position: relative; }
-.flip-card { position: relative; width: 100%; min-height: 300px; padding: 48px 40px; display: grid; place-items: center; text-align: center; border-radius: 14px; background: var(--bg-surface); border: 1px solid var(--border-subtle); color: var(--text-primary); font: inherit; font-size: 22px; line-height: 1.5; font-weight: 600; cursor: pointer; }
+.flip-card { position: relative; width: 100%; min-height: 300px; padding: 48px 40px; display: grid; place-items: center; text-align: center; border-radius: var(--radius-lg); background: var(--bg-surface); border: 1px solid var(--border-subtle); color: var(--text-primary); font: inherit; font-size: 22px; line-height: 1.5; font-weight: 600; cursor: pointer; }
 .flip-card:hover { border-color: rgba(232, 230, 227, 0.22); }
 .flip-card.back { font-size: 26px; color: var(--accent-text); }
 .flip-side { position: absolute; top: 14px; left: 16px; font-size: 12px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
