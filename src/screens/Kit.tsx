@@ -232,15 +232,17 @@ export function KitScreen({ id, query }: { id: string; query: URLSearchParams })
                 </button>
               ))}
             </div>
-            <ul class="rows">
+            <ul class="card-list">
               {shown.map((c) => (
-                <li class="row card-row" key={c.id}>
-                  <span class="row-main"><Prompt text={c.prompt} /></span>
-                  <span class="answer">{c.type === 'compare' ? c.answer : `→ ${c.answer}`}</span>
-                  <span class="row-tags">
-                    <Badge tone={STATUS_TONE[c.progress.state]}>{STATUS_LABEL[c.progress.state]}</Badge>
-                    <span class="muted small">{c.type === 'mcq' ? 'Multiple choice' : c.type === 'compare' ? 'Compare' : 'Fill in'}</span>
-                    <StarButton card={c} />
+                <li class="card-item" key={c.id}>
+                  <span class="card-prompt"><Prompt text={c.prompt} /></span>
+                  <span class="card-item-foot">
+                    <span class="answer">{c.type === 'compare' ? c.answer : `→ ${c.answer}`}</span>
+                    <span class="row-tags">
+                      <Badge tone={STATUS_TONE[c.progress.state]}>{STATUS_LABEL[c.progress.state]}</Badge>
+                      <Badge>{c.type === 'mcq' ? 'Multiple choice' : c.type === 'compare' ? 'Compare' : 'Fill in'}</Badge>
+                      <StarButton card={c} />
+                    </span>
                   </span>
                 </li>
               ))}
