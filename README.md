@@ -79,6 +79,12 @@ Short rounds of seven cards. Each card starts as multiple choice and comes back 
 - **Shared mastery.** Every mode feeds one model per card: *Not studied*, *Still learning*, or *Mastered* (right twice in a row).
 - **Exam dates.** Set one from the kit header to get a countdown. From three days out, Margin suggests a practice test.
 
+### Built for your phone
+
+<p align="center"><img src="docs/media/phones.png" alt="Margin on a phone: the kit page, a Learn round summary and a flashcard" width="760" /></p>
+
+Margin is a progressive web app. It installs to your home screen, works offline, and every screen is designed for both desktop and phone.
+
 
 ```bash
 npm install
