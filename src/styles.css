@@ -77,7 +77,7 @@ main { padding: 32px 40px 64px; max-width: 1120px; width: 100%; }
 .empty { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
 
 /* ---------- Controls */
-.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 16px; border-radius: 6px; border: 1px solid var(--border-subtle); background: var(--bg-surface); color: var(--text-primary); font: inherit; font-weight: 600; text-decoration: none; cursor: pointer; white-space: nowrap; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 16px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); background: var(--bg-surface); color: var(--text-primary); font: inherit; font-weight: 600; text-decoration: none; cursor: pointer; white-space: nowrap; }
 .card .btn:not(.primary) { background: var(--bg-canvas); }
 .btn.primary { background: var(--accent-primary); border-color: var(--accent-primary); color: var(--on-accent); }
 .btn.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
@@ -91,15 +91,15 @@ main { padding: 32px 40px 64px; max-width: 1120px; width: 100%; }
 
 .field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--text-secondary); font-weight: 600; }
 .field.grow { flex: 1; }
-input, textarea { font: inherit; font-size: 15px; color: var(--text-primary); background: var(--bg-surface); border: 1px solid rgba(232, 230, 227, 0.18); border-radius: 6px; padding: 10px 12px; min-height: 44px; width: 100%; }
+input, textarea { font: inherit; font-size: 15px; color: var(--text-primary); background: var(--bg-surface); border: 1px solid rgba(232, 230, 227, 0.18); border-radius: var(--radius-md); padding: 10px 12px; min-height: 44px; width: 100%; }
 .card input, .card textarea { background: var(--bg-canvas); }
 input[type='number'] { width: 120px; }
 input[type='date'] { width: auto; }
 textarea { resize: vertical; line-height: 1.5; }
 .rename { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
 
-.segmented { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px; background: var(--bg-canvas); border-radius: 6px; border: 1px solid var(--border-subtle); align-self: flex-start; }
-.segmented button { min-height: 40px; padding: 0 12px; border: 0; border-radius: 6px; background: none; color: var(--text-secondary); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+.segmented { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px; background: var(--bg-canvas); border-radius: var(--radius-md); border: 1px solid var(--border-subtle); align-self: flex-start; }
+.segmented button { min-height: 40px; padding: 0 12px; border: 0; border-radius: var(--radius-sm); background: none; color: var(--text-secondary); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
 .segmented button.on { background: var(--bg-surface); color: var(--text-primary); }
 .card .segmented { background: var(--bg-canvas); }
 .card .segmented button.on { background: var(--accent-tint); }
