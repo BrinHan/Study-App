@@ -33,7 +33,7 @@ h2 { font-size: 17px; }
 h3 { font-size: 14px; }
 p { margin: 0; }
 a { color: var(--accent-text); }
-code { font-size: 13px; background: var(--bg-canvas); padding: 1px 5px; border-radius: 6px; }
+code { font-size: 13px; background: var(--bg-canvas); padding: 1px 5px; border-radius: var(--radius-sm); }
 ul, ol { margin: 0; padding: 0; }
 mark { background: var(--accent-tint); color: var(--text-primary); border-bottom: 2px solid var(--accent-primary); padding: 0 2px; border-radius: 2px; }
 :focus-visible { outline: 2px solid var(--accent-text); outline-offset: 2px; }
@@ -87,7 +87,7 @@ main { padding: 32px 40px 64px; max-width: 1120px; width: 100%; }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; }
 .btn.primary:disabled:hover { background: var(--accent-primary); }
 .link { background: none; border: 0; padding: 0 4px; min-height: 44px; color: var(--accent-text); font: inherit; text-decoration: underline; cursor: pointer; }
-.kbd { font-size: 11px; padding: 1px 6px; border-radius: 6px; background: rgba(28, 26, 24, 0.25); }
+.kbd { font-size: 11px; padding: 1px 6px; border-radius: var(--radius-sm); background: rgba(28, 26, 24, 0.25); }
 
 .field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--text-secondary); font-weight: 600; }
 .field.grow { flex: 1; }
@@ -180,7 +180,7 @@ a.row-main { min-height: 36px; display: inline-flex; align-items: center; }
 
 /* ---------- Loading */
 .loading { display: flex; flex-direction: column; gap: 12px; padding: 8px 0; }
-.skeleton { display: block; height: 14px; border-radius: 6px; background: var(--bg-surface); }
+.skeleton { display: block; height: 14px; border-radius: var(--radius-sm); background: var(--bg-surface); }
 
 /* ---------- Questions (Learn, Test) */
 .prompt { font-size: 20px; line-height: 1.55; font-weight: 500; }
